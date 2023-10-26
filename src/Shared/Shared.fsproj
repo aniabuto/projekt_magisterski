@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Types\Types.fs" />
+    <Compile Include="Types\Artist.fs" />
+    <Compile Include="Types\Record.fs" />
+    <Compile Include="Types\Album.fs" />
+    <Compile Include="IApis\IAuthorsApi.fs" />
+    <Compile Include="IApis\IRecordsApi.fs" />
+    <Compile Include="IApis\IAlbumApi.fs" />
+    <Compile Include="Shared.fs" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>
