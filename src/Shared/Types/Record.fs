@@ -3,12 +3,12 @@ module Shared.Record
 open System
 open Shared.Types
 
-let create (title : string) (artists : Artist list) (genre : Genre option) (year : int option) =
+let create (title : string) (artists : Artist list) (year : int option) =
     {
         Id = Guid.NewGuid()
         Title = title
         Artists =  artists
-        Genre = genre
+        // Genre = genre
         Year = year
     }
 

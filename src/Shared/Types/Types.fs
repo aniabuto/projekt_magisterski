@@ -2,10 +2,10 @@ namespace Shared.Types
 
 open System
 
-type Genre =
-    | Pop
-    | Rock
-    | Classical
+// type Genre =
+//     | Pop
+//     | Rock
+//     | Classical
 
 type Artist = {
     Id : Guid
@@ -19,7 +19,7 @@ type Record = {
     Id : Guid
     Title : string
     Artists : Artist list
-    Genre : Genre option
+    // Genre : Genre option
     Year : int option
 }
 
