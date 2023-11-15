@@ -2,77 +2,84 @@ module Server
 //
 open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
-// open Giraffe
 open Saturn
+open Giraffe
 
+open ServerProject
 open Shared
-open System
 
-
-module Storage =
-    let books = ResizeArray<Book>()
-
-    let addBook (book : Book) =
-        let bookPresent =
-            books
-            |> Seq.tryFind (fun b -> b.Id = book.Id)
-        match bookPresent with
-        | Some(b) ->
-            Error "Book already in library"
-        | None ->
-            books.Add book
-            Ok()
-
-    let deleteBook (id : Guid) =
-        let book =
-            books
-            |> Seq.tryFind (fun book -> book.Id = id)
-        match book with
-        | Some(b) ->
-            books.Remove b |> ignore
-            Ok()
-        | None ->
-            Error "Book doesn't exist"
-
-    do
-        addBook (Book.create "The Witcher" "Andrzej Sapkowski" "jakis opis ksiazki")
-        |> ignore
-
-
-
-let booksApi =
+let genresApi =
+    let db = Db.createContext @"Data Source=.\SQLEXPRESS;Initial Catalog=SafeMusicStore;Integrated Security=SSPI;"
     {
-        getBooks = fun () -> async { return Storage.books |> List.ofSeq }
-
-        addBook = fun book -> async {
-            return
-                match Storage.addBook book with
-                    | Ok () -> book
-                    | Error e -> failwith e
-        }
-
-        removeBook = fun id -> async {
-            return
-                match Storage.deleteBook id with
-                    | Ok () -> true
-                    | Error e -> failwith e
-        }
-
-        removeBook2 = fun () -> async {
-            let id = Guid("8afc50aa-fc75-46a1-a20c-0d08a16216bd")
-            return
-                match Storage.deleteBook id with
-                    | Ok () -> true
-                    | Error e -> failwith e
-        }
+        getGenres = fun () -> Controller.getGenres db
     }
 
+let artistsApi =
+    let db = Db.createContext @"Data Source=.\SQLEXPRESS;Initial Catalog=SafeMusicStore;Integrated Security=SSPI;"
+    {
+        getArtists = fun () -> Controller.getArtists db
+    }
+
+let albumsApi =
+    let db = Db.createContext @"Data Source=.\SQLEXPRESS;Initial Catalog=SafeMusicStore;Integrated Security=SSPI;"
+    {
+        getAlbumsForGenre = fun genre -> Controller.getAlbumsForGenre (Some genre) db
+        getAlbumDetails = fun id -> Controller.getAlbumDetails id db
+        getAlbumsDetails = fun () -> Controller.getAlbumsDetails db
+        getAlbum = fun id -> Controller.getAlbum id db
+        getAlbums = fun () -> Controller.getAlbums db
+        getBestsellers = fun () -> Controller.getBestsellers db
+        deleteAlbum = fun album -> Controller.deleteAlbum album db
+        createAlbum = fun (artistId, genreId, price, title) -> Controller.createAlbum (artistId, genreId, price, title) db
+        updateAlbum = fun album (artistId, genreId, price, title) -> Controller.updateAlbum album (artistId, genreId, price, title) db
+    }
+
+let cartsApi =
+    let db = Db.createContext @"Data Source=.\SQLEXPRESS;Initial Catalog=SafeMusicStore;Integrated Security=SSPI;"
+    {
+        getCart = fun cartId albumId -> Controller.getCart cartId albumId db
+        addToCart = fun cartId albumId -> Controller.addToCart cartId albumId db
+        getCartDetails = fun cartId -> Controller.getCartDetails cartId db
+        removeFromCart = fun cart -> Controller.removeFromCart cart db
+        getCarts = fun cartId -> Controller.getCarts cartId db
+        updateCarts = fun (cartId, username) -> Controller.updateCarts (cartId, username) db
+    }
+
+let ordersApi =
+    let db = Db.createContext @"Data Source=.\SQLEXPRESS;Initial Catalog=SafeMusicStore;Integrated Security=SSPI;"
+    {
+        placeOrder = fun username -> Controller.placeOrder username db
+    }
 
 let webApp =
-    Remoting.createApi ()
-    |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.fromValue booksApi
-    |> Remoting.buildHttpHandler
+    choose [
+        Remoting.createApi ()
+        |> Remoting.withRouteBuilder Route.builder
+        |> Remoting.fromValue genresApi
+        |> Remoting.buildHttpHandler
+
+        Remoting.createApi ()
+        |> Remoting.withRouteBuilder Route.builder
+        |> Remoting.fromValue artistsApi
+        |> Remoting.buildHttpHandler
+
+        Remoting.createApi ()
+        |> Remoting.withDiagnosticsLogger (printfn "%s")
+        |> Remoting.withRouteBuilder Route.builder
+        |> Remoting.fromValue albumsApi
+        |> Remoting.buildHttpHandler
+
+        Remoting.createApi ()
+        |> Remoting.withRouteBuilder Route.builder
+        |> Remoting.fromValue cartsApi
+        |> Remoting.buildHttpHandler
+
+        Remoting.createApi ()
+        |> Remoting.withRouteBuilder Route.builder
+        |> Remoting.fromValue ordersApi
+        |> Remoting.buildHttpHandler
+
+    ]
 
 let app =
     application {
@@ -81,5 +88,6 @@ let app =
         use_static "public"
         use_gzip
     }
+
 
 run app

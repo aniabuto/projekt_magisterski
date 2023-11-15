@@ -1,46 +1,53 @@
 namespace Shared
 
-open System
-
-// type Todo = { Id: Guid; Description: string }
-
-// module Todo =
-//     let isValid (description: string) =
-//         String.IsNullOrWhiteSpace description |> not
-
-//     let create (description: string) =
-//         { Id = Guid.NewGuid()
-//           Description = description }
+open Microsoft.FSharp.Core
+open Shared.Types
 
 module Route =
     let builder typeName methodName =
-        sprintf "/api/%s/%s" typeName methodName
+        $"/api/%s{typeName}/%s{methodName}"
 
-// type ITodosApi =
-//     { getTodos: unit -> Async<Todo list>
-//       addTodo: Todo -> Async<Todo>
-//       removeTodo: Todo -> Async<bool> }
-
-type Book = {
-    Id : Guid;
-    Title : string;
-    Author : string;
-    Description : string;
-}
-
-module Book =
-    let create (title : string) (author : string) (description : string) =
-        {
-            Id = Guid.NewGuid()
-            Author = author
-            Title = title
-            Description = description
-        }
-
-type IBooksApi =
+type IGenresApi =
     {
-        getBooks : unit -> Async<Book list>
-        addBook : Book -> Async<Book>
-        removeBook : Guid -> Async<bool>
-        removeBook2 : unit -> Async<bool>
+        getGenres : unit -> Async<Genre list>
+    }
+
+type IArtistsApi =
+    {
+        getArtists : unit -> Async<Artist list>
+    }
+
+type IAlbumsApi =
+    {
+        getAlbumsForGenre : string -> Async<Album list>
+        getAlbumDetails : int -> Async<AlbumDetails option>
+        getAlbumsDetails : unit -> Async<AlbumDetails list>
+        getAlbum : int -> Async<Album option>
+        getAlbums : unit -> Async<Album list>
+        getBestsellers : unit -> Async<Bestseller list>
+        deleteAlbum : Album -> Async<unit>
+        createAlbum : int * int * decimal * string -> Async<unit>
+        updateAlbum : Album -> int * int * decimal * string -> Async<unit>
+    }
+
+type ICartsApi =
+    {
+        getCart : string -> int -> Async<Cart option>
+        addToCart : string -> int -> Async<unit>
+        getCartDetails : string -> Async<CartDetails list>
+        removeFromCart : Cart -> Async<unit>
+        getCarts : string -> Async<Cart list>
+        updateCarts : string * string -> Async<unit>
+    }
+
+type IUsersApi =
+    {
+        validateUser : string * string -> Async<User option>
+        getUser : string -> Async<User option>
+        newUser : string * string * string -> Async<User>
+    }
+
+type IOrdersApi =
+    {
+        placeOrder : string -> Async<unit>
     }
