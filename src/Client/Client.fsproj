@@ -7,6 +7,12 @@
     <ItemGroup>
         <None Include="index.html" />
         <None Include="paket.references" />
+        <Compile Include="Apis.fs" />
+        <Compile Include="BestsellersList.fs" />
+        <Compile Include="GenresList.fs" />
+        <Compile Include="ArtistsList.fs" />
+        <Compile Include="AlbumsList.fs" />
+        <Compile Include="AlbumDetails.fs" />
         <Compile Include="Index.fs" />
         <Compile Include="App.fs" />
     </ItemGroup>
@@ -14,8 +20,9 @@
         <ProjectReference Include="..\Shared\Shared.fsproj" />
     </ItemGroup>
     <ItemGroup>
+      <PackageReference Include="Feliz.Router" Version="3.8.0" />
       <PackageReference Include="Npgsql" Version="6.0.10" />
-      <PackageReference Include="SQLProvider" Version="1.3.19" />
+      <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
     </ItemGroup>
     <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

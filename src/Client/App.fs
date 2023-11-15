@@ -1,5 +1,6 @@
 module App
 
+open Client
 open Elmish
 open Elmish.React
 
