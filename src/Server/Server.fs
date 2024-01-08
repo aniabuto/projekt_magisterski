@@ -45,6 +45,14 @@ let cartsApi =
         updateCarts = fun (cartId, username) -> Controller.updateCarts (cartId, username) db
     }
 
+let usersApi =
+    let db = Db.createContext @"Data Source=.\SQLEXPRESS;Initial Catalog=SafeMusicStore;Integrated Security=SSPI;"
+    {
+        validateUser = fun (username, password) -> Controller.validateUser (username, password) db
+        getUser = fun username -> Controller.getUser username db
+        newUser = fun (username, password, email) -> Controller.newUser (username, password, email) db
+    }
+
 let ordersApi =
     let db = Db.createContext @"Data Source=.\SQLEXPRESS;Initial Catalog=SafeMusicStore;Integrated Security=SSPI;"
     {
@@ -77,6 +85,11 @@ let webApp =
         Remoting.createApi ()
         |> Remoting.withRouteBuilder Route.builder
         |> Remoting.fromValue ordersApi
+        |> Remoting.buildHttpHandler
+
+        Remoting.createApi ()
+        |> Remoting.withRouteBuilder Route.builder
+        |> Remoting.fromValue usersApi
         |> Remoting.buildHttpHandler
 
     ]

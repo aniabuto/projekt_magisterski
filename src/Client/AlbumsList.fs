@@ -51,8 +51,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
      | GotAlbumsByGenre albums ->
          { model with Albums = albums }, Cmd.none
      | GetDetails id ->
-         // let cmd = Cmd.OfAsync.perform albumsApi.getAlbumsForGenre genre GotAlbumsByGenre
-         model, Cmd.navigate ("albums", "details", id)
+         model, Cmd.navigate ("albums", "details", id, ["prev", "albums"])
      | _ ->
          model, Cmd.none
 
@@ -107,7 +106,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
 
             Bulma.table [
                 prop.children [
-                    Html.tr [
+                    Html.thead [
                         prop.children [
                             Html.th [
                                 prop.text "Title"
@@ -126,30 +125,32 @@ let view (model: Model) (dispatch: Msg -> unit) =
                             ]
                         ]
                     ]
-                    for album in model.AlbumsDetails do
-                        if searchForAlbum album.AlbumId model.Albums then
-                            Html.tr [
-                                prop.children [
-                                    Html.td [
-                                    prop.text album.Title
-                                    ]
-                                    Html.td [
-                                        prop.text (album.ArtistName |> Option.get)
-                                    ]
-                                    Html.td [
-                                        prop.text (album.GenreName |> Option.get)
-                                    ]
-                                    Html.td [
-                                        prop.text (string album.Price)
-                                    ]
-                                    Html.td [
-                                        Html.button [
-                                            prop.text "Details"
-                                            prop.onClick (fun _ -> GetDetails album.AlbumId |> dispatch)
+                    Html.tbody[
+                        for album in model.AlbumsDetails do
+                            if searchForAlbum album.AlbumId model.Albums then
+                                Html.tr [
+                                    prop.children [
+                                        Html.td [
+                                        prop.text album.Title
+                                        ]
+                                        Html.td [
+                                            prop.text (album.ArtistName |> Option.get)
+                                        ]
+                                        Html.td [
+                                            prop.text (album.GenreName |> Option.get)
+                                        ]
+                                        Html.td [
+                                            prop.text (string album.Price)
+                                        ]
+                                        Html.td [
+                                            Html.button [
+                                                prop.text "Details"
+                                                prop.onClick (fun _ -> GetDetails album.AlbumId |> dispatch)
+                                            ]
                                         ]
                                     ]
                                 ]
-                            ]
+                    ]
                 ]
             ]
         ]

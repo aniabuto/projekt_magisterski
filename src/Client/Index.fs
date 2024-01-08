@@ -4,6 +4,9 @@ open Elmish
 open Feliz.Bulma
 open Feliz
 open Feliz.Router
+open Feliz.ReactApi
+open Shared.Types
+open Client.Apis
 
 type Page =
     | BestsellersList of BestsellersList.Model
@@ -13,7 +16,11 @@ type Page =
     | AlbumDetails of AlbumDetails.Model
     | NotFound
 
-type Model = { CurrentPage : Page }
+type Model = {
+    CurrentPage : Page
+    CurrentUser : User option
+    ModalShown : bool
+}
 
 type Msg =
     | BestsellersListMsg of BestsellersList.Msg
@@ -22,36 +29,42 @@ type Msg =
     | AlbumsListMsg of AlbumsList.Msg
     | AlbumDetailsMsg of AlbumDetails.Msg
     | UrlChanged of string list
+    | ChangeUser of string
+    | ChangedUser of User option
+    | ToggleModal of bool
 
-let initFromUrl url =
+let initFromUrl url user =
     match url with
     | ["bestsellers"] ->
         let bestsellersListModel, bestsellersListMsg = BestsellersList.init ()
-        let model = { CurrentPage = BestsellersList bestsellersListModel }
+        let model = { CurrentPage = BestsellersList bestsellersListModel; CurrentUser = user; ModalShown = false }
 
         model, bestsellersListMsg |> Cmd.map BestsellersListMsg
     | ["genres"] ->
         let genresListModel, genresListMsg = GenresList.init ()
-        let model = { CurrentPage = GenresList genresListModel }
+        let model = { CurrentPage = GenresList genresListModel; CurrentUser = user; ModalShown = false }
 
         model, genresListMsg |> Cmd.map GenresListMsg
     | ["artists"] ->
         let artistsListModel, artistsListMsg = ArtistsList.init ()
-        let model = { CurrentPage = ArtistsList artistsListModel }
+        let model = { CurrentPage = ArtistsList artistsListModel; CurrentUser = user; ModalShown = false }
 
         model, artistsListMsg |> Cmd.map ArtistsListMsg
     | ["albums"] ->
         let albumsListModel, albumsListMsg = AlbumsList.init ()
-        let model = { CurrentPage = AlbumsList albumsListModel }
+        let model = { CurrentPage = AlbumsList albumsListModel; CurrentUser = user; ModalShown = false }
 
         model, albumsListMsg |> Cmd.map AlbumsListMsg
-    | ["albums"; "details"; id] ->
-        let albumsListModel, albumsListMsg = AlbumDetails.init (int id)
-        let model = { CurrentPage = AlbumDetails albumsListModel }
+    | ["albums"; "details"; id; prev] ->
+        let albumsListModel, albumsListMsg = AlbumDetails.init (int id) (prev.Split "?prev=" |> Array.last)
+        let model = { CurrentPage = AlbumDetails albumsListModel; CurrentUser = user; ModalShown = false }
 
         model, albumsListMsg |> Cmd.map AlbumDetailsMsg
-    | _ -> { CurrentPage = NotFound }, Cmd.none
+    | _ -> { CurrentPage = NotFound; CurrentUser = user; ModalShown = false }, Cmd.none
 
+
+let init () : Model * Cmd<Msg> =
+    initFromUrl (Router.currentUrl ()) None
 
 let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
     match model.CurrentPage, message with
@@ -80,13 +93,19 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         let model = { model with CurrentPage = AlbumDetails newAlbumsListModel }
 
         model, newCommand |> Cmd.map AlbumDetailsMsg
-    | _, UrlChanged url -> initFromUrl url
-    | _, _ -> model, Cmd.none
+    | _, UrlChanged url -> initFromUrl url model.CurrentUser
+    // | _, UrlChanged url -> initFromUrl url
+    | _, ChangeUser username ->
+        let cmd = Cmd.OfAsync.perform usersApi.getUser username ChangedUser
+        model, cmd
+    | _, ChangedUser user ->
+        initFromUrl (Router.currentUrl ()) user
+        // initFromUrl (Router.currentUrl ())
+    | _, ToggleModal value ->
+        {model with ModalShown = value }, Cmd.none
+    | _, _ -> initFromUrl (Router.currentUrl ()) model.CurrentUser
+    // | _, _ -> initFromUrl (Router.currentUrl ())
 
-
-let init () : Model * Cmd<Msg> =
-    Router.currentUrl ()
-    |> initFromUrl
 
 
 let containerBox model dispatch =
@@ -112,6 +131,11 @@ let navBrand =
         ]
     ]
 
+let toggleLogInModal (model : Model) =
+    { model with ModalShown = true }
+
+
+
 let view (model: Model) (dispatch: Msg -> unit) =
     React.router [
         router.onUrlChanged (UrlChanged >> dispatch)
@@ -131,6 +155,38 @@ let view (model: Model) (dispatch: Msg -> unit) =
                                 text.hasTextCentered
                                 prop.text "SAFE Music Store"
                             ]
+                            match model.CurrentUser with
+                            | Some user ->
+                                Bulma.subtitle [
+                                    text.hasTextCentered
+                                    prop.text user.Username
+                                ]
+                                Html.button [
+                                    prop.text "Log Out"
+                                    prop.onClick (fun _ -> ChangeUser "" |> dispatch)
+                                ]
+                            | None ->
+                                Bulma.button.button [
+                                    prop.ariaHasPopup true
+                                    prop.target "modal-sample"
+                                    prop.text "Log in"
+                                    prop.onClick (fun _ -> ToggleModal true |> dispatch)
+                                ]
+                                Bulma.modal [
+                                    if model.ModalShown then Bulma.modal.isActive
+                                    prop.id "modal-sample"
+                                    prop.children [
+                                        Bulma.modalBackground []
+                                        Bulma.modalContent [
+                                            Bulma.box [
+                                                Html.h1 "Modal content"
+                                            ]
+                                        ]
+                                        Bulma.modalClose [
+                                            prop.onClick (fun _ -> ToggleModal false |> dispatch)
+                                        ]
+                                    ]
+                                ]
                             containerBox model dispatch
                         ]
                     ]

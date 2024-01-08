@@ -4,7 +4,8 @@ CREATE TABLE [dbo].[carts] (
     [albumid]     INT          NOT NULL,
     [count]       INT          NOT NULL,
     [datecreated] DATETIME     NOT NULL,
-    PRIMARY KEY CLUSTERED ([recordid] ASC)
+    PRIMARY KEY CLUSTERED ([recordid] ASC),
+    CONSTRAINT [carts_albums_null_fk] FOREIGN KEY ([albumid]) REFERENCES [dbo].[albums] ([id])
 );
 GO
 
