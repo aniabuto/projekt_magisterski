@@ -105,10 +105,12 @@ let getArtists (ctx : DB.dataContext) =
     }
     |> List.executeQueryAsync
 
-let createAlbum (artistId, genreId, price, title) (ctx : DB.dataContext) =
+let createAlbum (artistId, genreId, price, title, thumbnail) (ctx : DB.dataContext) =
     async {
-        ctx.Public.Albums.Create(artistId, genreId, price, title) |> ignore
+        let newAlbum = ctx.Public.Albums.Create(artistId, genreId, price, title)
+        newAlbum.Thumbnail <- thumbnail
         ctx.SubmitUpdates()
+        return newAlbum.Id
     }
 
 let updateAlbum (albumId : int) (title, price, thumbnail) (ctx : DB.dataContext) =

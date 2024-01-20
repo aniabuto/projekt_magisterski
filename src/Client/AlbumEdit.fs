@@ -60,7 +60,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
          | None ->
                 { model with
                     AlbumDetails = albums
-                    Form = Form.View.idle { Title = ""; Thumbnail = ""; Price = "" }
+                    Form = Form.View.idle { Title = ""; Thumbnail = ""; Price = string(Decimal.Zero) }
                 }, Cmd.none
      | EditAlbum ( title, price, thumbnail) ->
          model, Cmd.OfAsyncImmediate.perform albumsApi.updateAlbum (model.AlbumId, title, price, thumbnail) AlbumEdited

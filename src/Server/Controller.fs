@@ -37,8 +37,8 @@ let getBestsellers (ctx : DB.dataContext) =
 let deleteAlbum (album : int) (ctx : DB.dataContext) =
     Repository.deleteAlbum album ctx
 
-let createAlbum (artistId, genreId, price, title) (ctx : DB.dataContext) =
-    Repository.createAlbum (artistId, genreId, price, title) ctx
+let createAlbum (artistId, genreId, price, title, thumbnail) (ctx : DB.dataContext) =
+    Repository.createAlbum (artistId, genreId, price, title, thumbnail) ctx
 
 let updateAlbum (albumId : int) (title, price, thumbnail) (ctx : DB.dataContext) =
     Repository.updateAlbum albumId (title, price, thumbnail) ctx

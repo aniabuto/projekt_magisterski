@@ -26,7 +26,7 @@ type IAlbumsApi =
         getAlbums : unit -> Async<Album list>
         getBestsellers : unit -> Async<Bestseller list>
         deleteAlbum : int -> Async<unit>
-        createAlbum : int * int * decimal * string -> Async<unit>
+        createAlbum : int * int * decimal * string * string -> Async<int>
         updateAlbum : int * string * decimal * string -> Async<unit>
     }
 

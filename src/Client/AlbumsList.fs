@@ -20,6 +20,7 @@ type Msg =
     | FilterByGenre of string
     | GotAlbumsByGenre of Album list
     | GetDetails of int
+    | AddAlbum
 
 
 let init () : Model * Cmd<Msg> =
@@ -52,6 +53,8 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
          { model with Albums = albums }, Cmd.none
      | GetDetails id ->
          model, Cmd.navigate ("albums", id)
+     | AddAlbum ->
+         model, Cmd.navigate ("albums", "create")
      | _ ->
          model, Cmd.none
 
@@ -146,6 +149,14 @@ let genresListView (genresList : Genre list) (dispatch: Msg -> unit) =
                                 prop.text genre.Name
                             ]
                     ]
+                ]
+            ]
+            Bulma.column [
+                Html.button [
+                    text.hasTextCentered
+                    prop.text "Add Album"
+                    prop.onClick (fun _ -> AddAlbum |> dispatch)
+                    color.hasTextDark
                 ]
             ]
         ]

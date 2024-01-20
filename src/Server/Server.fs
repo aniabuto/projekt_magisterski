@@ -32,7 +32,7 @@ let albumsApi =
         getAlbums = fun () -> Controller.getAlbums db
         getBestsellers = fun () -> Controller.getBestsellers db
         deleteAlbum = fun album -> Controller.deleteAlbum album db
-        createAlbum = fun (artistId, genreId, price, title) -> Controller.createAlbum (artistId, genreId, price, title) db
+        createAlbum = fun (artistId, genreId, price, title, thumbnail) -> Controller.createAlbum (artistId, genreId, price, title, thumbnail) db
         updateAlbum = fun (albumId, title, price, thumbnail) -> Controller.updateAlbum albumId (title, price, thumbnail) db
     }
 

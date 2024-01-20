@@ -15,6 +15,7 @@ type Page =
     | AlbumsList of AlbumsList.Model
     | AlbumDetails of AlbumDetails.Model
     | AlbumEdit of AlbumEdit.Model
+    | AlbumCreate of AlbumCreate.Model
     | NotFound
 
 type Model = {
@@ -30,6 +31,7 @@ type Msg =
     | AlbumsListMsg of AlbumsList.Msg
     | AlbumDetailsMsg of AlbumDetails.Msg
     | AlbumEditMsg of AlbumEdit.Msg
+    | AlbumCreateMsg of AlbumCreate.Msg
     | UrlChanged of string list
     | ChangeUser of string
     | ChangedUser of User option
@@ -67,6 +69,11 @@ let initFromUrl url user =
         let model = { CurrentPage = AlbumEdit albumsListModel; CurrentUser = user; ModalShown = false }
 
         model, albumsListMsg |> Cmd.map AlbumEditMsg
+    | ["albums"; "create"] ->
+        let albumsListModel, albumsListMsg = AlbumCreate.init ()
+        let model = { CurrentPage = AlbumCreate albumsListModel; CurrentUser = user; ModalShown = false }
+
+        model, albumsListMsg |> Cmd.map AlbumCreateMsg
     | _ -> { CurrentPage = NotFound; CurrentUser = user; ModalShown = false }, Cmd.none
 
 
@@ -105,6 +112,11 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         let model = { model with CurrentPage = AlbumEdit newAlbumsListModel }
 
         model, newCommand |> Cmd.map AlbumEditMsg
+    | AlbumCreate albumsList, AlbumCreateMsg albumsListMessage ->
+        let newAlbumsListModel, newCommand = AlbumCreate.update albumsListMessage albumsList
+        let model = { model with CurrentPage = AlbumCreate newAlbumsListModel }
+
+        model, newCommand |> Cmd.map AlbumCreateMsg
     | _, UrlChanged url -> initFromUrl url model.CurrentUser
     // | _, UrlChanged url -> initFromUrl url
     | _, ChangeUser username ->
@@ -128,6 +140,7 @@ let containerBox model dispatch =
     | AlbumsList albumsModel -> AlbumsList.view albumsModel (AlbumsListMsg >> dispatch)
     | AlbumDetails albumsModel -> AlbumDetails.view albumsModel (AlbumDetailsMsg >> dispatch)
     | AlbumEdit albumsModel -> AlbumEdit.view albumsModel (AlbumEditMsg >> dispatch)
+    | AlbumCreate albumsModel -> AlbumCreate.view albumsModel (AlbumCreateMsg >> dispatch)
     | NotFound -> Bulma.box "Page not found"
 
 let navBrand =
