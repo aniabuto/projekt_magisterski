@@ -16,11 +16,11 @@ type Artist = {
 
 type Album = {
     Id : int
-    mutable GenreId : int
-    mutable ArtistId : int
+    GenreId : int
+    ArtistId : int
     mutable Title : string
     mutable Price : decimal
-    Thumbnail : string
+    mutable Thumbnail : string
 }
 
 type Order = {

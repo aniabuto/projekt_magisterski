@@ -1,5 +1,6 @@
 module ServerProject.Controller
 
+open System
 open ServerProject.Db
 open Shared.Types
 
@@ -39,8 +40,8 @@ let deleteAlbum (album : int) (ctx : DB.dataContext) =
 let createAlbum (artistId, genreId, price, title) (ctx : DB.dataContext) =
     Repository.createAlbum (artistId, genreId, price, title) ctx
 
-let updateAlbum (album : Album) (artistId, genreId, price, title) (ctx : DB.dataContext) =
-    Repository.updateAlbum album (artistId, genreId, price, title) ctx
+let updateAlbum (albumId : int) (title, price, thumbnail) (ctx : DB.dataContext) =
+    Repository.updateAlbum albumId (title, price, thumbnail) ctx
 
 let getCart cartId albumId (ctx : DB.dataContext) =
     Repository.getCart cartId albumId ctx

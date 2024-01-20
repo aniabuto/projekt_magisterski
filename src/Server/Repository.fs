@@ -44,6 +44,14 @@ let getAlbum id (ctx : DB.dataContext) =
     }
     |> Seq.tryHeadAsync
 
+let getAlbumSync id (ctx : DB.dataContext) =
+    query {
+        for album in ctx.Public.Albums do
+            where (album.Id = id)
+            select (album |> albumEntityToType)
+    }
+    |> Seq.tryHead
+
 let getAlbums (ctx : DB.dataContext) =
     query {
         for album in ctx.Public.Albums do
@@ -99,13 +107,21 @@ let createAlbum (artistId, genreId, price, title) (ctx : DB.dataContext) =
         ctx.SubmitUpdates()
     }
 
-let updateAlbum (album : Album) (artistId, genreId, price, title) (ctx : DB.dataContext) =
+let updateAlbum (albumId : int) (title, price, thumbnail) (ctx : DB.dataContext) =
     async {
-        album.ArtistId <- artistId
-        album.GenreId <- genreId
-        album.Price <- price
-        album.Title <- title
-        ctx.SubmitUpdates()
+        let foundAlbum =
+            query {
+                for a in ctx.Public.Albums do
+                    where (a.Id = albumId)
+                    select a
+            }|> Seq.tryHead
+        match foundAlbum with
+        | Some album ->
+            album.Title <- title
+            album.Price <- price
+            album.Thumbnail <- thumbnail
+            ctx.SubmitUpdates()
+        | None -> ()
     }
 
 let validateUser (username, password) (ctx : DB.dataContext) =

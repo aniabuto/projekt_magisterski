@@ -33,7 +33,7 @@ let albumsApi =
         getBestsellers = fun () -> Controller.getBestsellers db
         deleteAlbum = fun album -> Controller.deleteAlbum album db
         createAlbum = fun (artistId, genreId, price, title) -> Controller.createAlbum (artistId, genreId, price, title) db
-        updateAlbum = fun album (artistId, genreId, price, title) -> Controller.updateAlbum album (artistId, genreId, price, title) db
+        updateAlbum = fun (albumId, title, price, thumbnail) -> Controller.updateAlbum albumId (title, price, thumbnail) db
     }
 
 let cartsApi =

@@ -113,7 +113,7 @@ let albumsRowView (album : AlbumDetails) (dispatch: Msg -> unit) =
                 prop.text album.GenreName
             ]
             Html.td [
-                prop.text (string album.Price)
+                prop.text (string $"%.2f{album.Price}")
             ]
             Html.td [
                 Html.button [
