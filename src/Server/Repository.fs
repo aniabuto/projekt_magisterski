@@ -17,6 +17,7 @@ let getAlbumsForGenre genreName (ctx : DB.dataContext) =
         for album in ctx.Public.Albums do
             join genre in ctx.Public.Genres on (album.Genreid = genre.GenresId)
             where (genre.Name = genreName)
+            sortBy album.Id
             select (album |> albumEntityToType)
     }
     |> List.executeQueryAsync
@@ -32,6 +33,7 @@ let getAlbumDetails id (ctx: DB.dataContext) =
 let getAlbumsDetails (ctx : DB.dataContext) =
     query {
         for album in ctx.Public.Albumdetails do
+            sortBy album.Id
             select (album |> albumDetailsEntityToType)
     }
     |> List.executeQueryAsync
@@ -55,6 +57,7 @@ let getAlbumSync id (ctx : DB.dataContext) =
 let getAlbums (ctx : DB.dataContext) =
     query {
         for album in ctx.Public.Albums do
+            sortBy album.Id
             select (album |> albumEntityToType)
     }
     |> List.executeQueryAsync
@@ -97,6 +100,7 @@ let deleteCart (cart : Cart) (ctx : DB.dataContext) =
 let getArtists (ctx : DB.dataContext) =
     query {
         for artist in ctx.Public.Artists do
+            sortBy artist.Id
             select (artist |> artistEntityToType)
     }
     |> List.executeQueryAsync

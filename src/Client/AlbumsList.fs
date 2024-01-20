@@ -126,17 +126,28 @@ let albumsRowView (album : AlbumDetails) (dispatch: Msg -> unit) =
 
 
 let genresListView (genresList : Genre list) (dispatch: Msg -> unit) =
-    Bulma.select [
-        prop.onChange (fun id -> FilterByGenre id |> dispatch )
-        prop.children [
-            Html.option [
-                    prop.text ""
+    Bulma.box [
+        Bulma.columns [
+            Bulma.column [
+                Bulma.label [
+                    prop.text "Genre: "
                 ]
-            for genre in genresList do
-                Html.option [
-                    prop.value genre.Name
-                    prop.text genre.Name
+            ]
+            Bulma.column [
+                Bulma.select [
+                    prop.onChange (fun id -> FilterByGenre id |> dispatch )
+                    prop.children [
+                        Html.option [
+                                prop.text "All"
+                            ]
+                        for genre in genresList do
+                            Html.option [
+                                prop.value genre.Name
+                                prop.text genre.Name
+                            ]
+                    ]
                 ]
+            ]
         ]
     ]
 
