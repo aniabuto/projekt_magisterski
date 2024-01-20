@@ -8,22 +8,24 @@ open Giraffe
 open ServerProject
 open Shared
 
+// let connectionString = @"Server=localhost\SQLEXPRESS;Database=SafeMusicStore;Trusted_Connection=True;"
+let connectionString = Db.TPConnectionString
 let genresApi =
-    let db = Db.createContext @"Data Source=.\SQLEXPRESS;Initial Catalog=SafeMusicStore;Integrated Security=SSPI;"
+    let db = Db.createContext connectionString
     {
         getGenres = fun () -> Controller.getGenres db
     }
 
 let artistsApi =
-    let db = Db.createContext @"Data Source=.\SQLEXPRESS;Initial Catalog=SafeMusicStore;Integrated Security=SSPI;"
+    let db = Db.createContext connectionString
     {
         getArtists = fun () -> Controller.getArtists db
     }
 
 let albumsApi =
-    let db = Db.createContext @"Data Source=.\SQLEXPRESS;Initial Catalog=SafeMusicStore;Integrated Security=SSPI;"
+    let db = Db.createContext connectionString
     {
-        getAlbumsForGenre = fun genre -> Controller.getAlbumsForGenre (Some genre) db
+        getAlbumsForGenre = fun genre -> Controller.getAlbumsForGenre (genre) db
         getAlbumDetails = fun id -> Controller.getAlbumDetails id db
         getAlbumsDetails = fun () -> Controller.getAlbumsDetails db
         getAlbum = fun id -> Controller.getAlbum id db
@@ -35,7 +37,7 @@ let albumsApi =
     }
 
 let cartsApi =
-    let db = Db.createContext @"Data Source=.\SQLEXPRESS;Initial Catalog=SafeMusicStore;Integrated Security=SSPI;"
+    let db = Db.createContext connectionString
     {
         getCart = fun cartId albumId -> Controller.getCart cartId albumId db
         addToCart = fun cartId albumId -> Controller.addToCart cartId albumId db
@@ -46,7 +48,7 @@ let cartsApi =
     }
 
 let usersApi =
-    let db = Db.createContext @"Data Source=.\SQLEXPRESS;Initial Catalog=SafeMusicStore;Integrated Security=SSPI;"
+    let db = Db.createContext connectionString
     {
         validateUser = fun (username, password) -> Controller.validateUser (username, password) db
         getUser = fun username -> Controller.getUser username db
@@ -54,7 +56,7 @@ let usersApi =
     }
 
 let ordersApi =
-    let db = Db.createContext @"Data Source=.\SQLEXPRESS;Initial Catalog=SafeMusicStore;Integrated Security=SSPI;"
+    let db = Db.createContext connectionString
     {
         placeOrder = fun username -> Controller.placeOrder username db
     }

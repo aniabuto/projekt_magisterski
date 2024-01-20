@@ -3,21 +3,21 @@ module ServerProject.TypeConverter
 open ServerProject.Db
 open Shared.Types
 
-let genreEntityToType (genre : DB.dataContext.``dbo.genresEntity``) =
+let genreEntityToType (genre : DB.dataContext.``public.genresEntity``) =
     {
-        Id = genre.Id
+        Id = genre.GenresId
         Name =  genre.Name
         Description =  genre.Description
     }
 
-let artistEntityToType (artist : DB.dataContext.``dbo.artistsEntity``) =
+let artistEntityToType (artist : DB.dataContext.``public.artistsEntity``) =
     {
        Id = artist.Id
        Name = artist.Name
        Bio = artist.Bio
     }
 
-let albumEntityToType (album : DB.dataContext.``dbo.albumsEntity``) =
+let albumEntityToType (album : DB.dataContext.``public.albumsEntity``) =
     {
         Id = album.Id
         ArtistId =  album.Artistid
@@ -27,42 +27,42 @@ let albumEntityToType (album : DB.dataContext.``dbo.albumsEntity``) =
         Thumbnail =  album.Thumbnail
     }
 
-let orderEntityToType (order : DB.dataContext.``dbo.ordersEntity``) =
+let orderEntityToType (order : DB.dataContext.``public.ordersEntity``) =
     {
         Id = order.Id
-        OrderDate = order.Orderdate
+        OrderDate = order.Date
         Username = order.Username
         FirstName = order.Firstname
         LastName = order.Lastname
         Address = order.Address
         City = order.City
         State = order.State
-        PostalCode = order.Postalcode
+        PostalCode = order.PostalCode
         Country = order.Country
         Phone = order.Phone
         Email = order.Email
         Total = order.Total
     }
 
-let orderDetailsEntityToType (orderDetails : DB.dataContext.``dbo.orderdetailsEntity``) =
+let orderDetailsEntityToType (orderDetails : DB.dataContext.``public.orderdetailsEntity``) =
     {
         Id = orderDetails.Id
-        OrderId = orderDetails.Orderid
-        AlbumId = orderDetails.Albumid
+        OrderId = orderDetails.OrderId
+        AlbumId = orderDetails.AlbumId
         Quantity = orderDetails.Quantity
-        UnitPrice = orderDetails.Unitprice
+        UnitPrice = orderDetails.UnitPrice
     }
 
-let cartEntityToType (cart : DB.dataContext.``dbo.cartsEntity``) =
+let cartEntityToType (cart : DB.dataContext.``public.cartsEntity``) =
     {
-        RecordId = cart.Recordid
-        CartId = cart.Cartid
-        AlbumId = cart.Albumid
+        RecordId = cart.Id
+        CartId = cart.CartId
+        AlbumId = cart.AlbumId
         Count = cart.Count
-        DateCreated = cart.Datecreated
+        DateCreated = cart.DateCreated
     }
 
-let userEntityToType (user : DB.dataContext.``dbo.usersEntity``) =
+let userEntityToType (user : DB.dataContext.``public.usersEntity``) =
     {
         Id = user.Id
         Username = user.Username
@@ -71,7 +71,7 @@ let userEntityToType (user : DB.dataContext.``dbo.usersEntity``) =
         Role = user.Role
     }
 
-let albumDetailsEntityToType (album : DB.dataContext.``dbo.albumdetailsEntity``) =
+let albumDetailsEntityToType (album : DB.dataContext.``public.albumdetailsEntity``) =
     {
         AlbumId = album.Id
         Thumbnail = album.Thumbnail
@@ -81,19 +81,19 @@ let albumDetailsEntityToType (album : DB.dataContext.``dbo.albumdetailsEntity``)
         GenreName = album.Genre
     }
 
-let cartDetailsEntityToType (cart : DB.dataContext.``dbo.cartdetailsEntity``) =
+let cartDetailsEntityToType (cart : DB.dataContext.``public.cartdetailsEntity``) =
     {
-        CartId = cart.Cartid
+        CartId = cart.CartId
         Count = cart.Count
         AlbumTitle = cart.Albumtitle
         AlbumId = cart.Albumid
         Price = cart.Price
     }
 
-let bestsellerEntityToType (bestseller : DB.dataContext.``dbo.bestsellersEntity``) =
+let bestsellerEntityToType (bestseller : DB.dataContext.``public.bestsellersEntity``) =
     {
         AlbumId = bestseller.Id
         Title = bestseller.Title
         Thumbnail = bestseller.Thumbnail
-        Count = bestseller.Count :?> int
+        Count = bestseller.Count
     }

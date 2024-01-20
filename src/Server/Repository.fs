@@ -8,14 +8,14 @@ open Shared.Types
 
 let getGenres (ctx : DB.dataContext) =
     query {
-        for genre in ctx.Dbo.Genres do
+        for genre in ctx.Public.Genres do
             select (genre |> genreEntityToType)
     } |> List.executeQueryAsync
 
 let getAlbumsForGenre genreName (ctx : DB.dataContext) =
     query {
-        for album in ctx.Dbo.Albums do
-            join genre in ctx.Dbo.Genres on (album.Genreid = genre.Id)
+        for album in ctx.Public.Albums do
+            join genre in ctx.Public.Genres on (album.Genreid = genre.GenresId)
             where (genre.Name = genreName)
             select (album |> albumEntityToType)
     }
@@ -23,7 +23,7 @@ let getAlbumsForGenre genreName (ctx : DB.dataContext) =
 
 let getAlbumDetails id (ctx: DB.dataContext) =
     query {
-        for album in ctx.Dbo.Albumdetails do
+        for album in ctx.Public.Albumdetails do
             where (album.Id = id)
             select (album |> albumDetailsEntityToType)
     }
@@ -31,14 +31,14 @@ let getAlbumDetails id (ctx: DB.dataContext) =
 
 let getAlbumsDetails (ctx : DB.dataContext) =
     query {
-        for album in ctx.Dbo.Albumdetails do
+        for album in ctx.Public.Albumdetails do
             select (album |> albumDetailsEntityToType)
     }
     |> List.executeQueryAsync
 
 let getAlbum id (ctx : DB.dataContext) =
     query {
-        for album in ctx.Dbo.Albums do
+        for album in ctx.Public.Albums do
             where (album.Id = id)
             select (album |> albumEntityToType)
     }
@@ -46,37 +46,37 @@ let getAlbum id (ctx : DB.dataContext) =
 
 let getAlbums (ctx : DB.dataContext) =
     query {
-        for album in ctx.Dbo.Albums do
+        for album in ctx.Public.Albums do
             select (album |> albumEntityToType)
     }
     |> List.executeQueryAsync
 
 let getBestsellers (ctx : DB.dataContext) =
     query {
-        for bestseller in ctx.Dbo.Bestsellers do
+        for bestseller in ctx.Public.Bestsellers do
             select (bestseller |> bestsellerEntityToType)
     }
     |> List.executeQueryAsync
 
-let deleteAlbum (album : Album) (ctx : DB.dataContext) =
+let deleteAlbum (id : int) (ctx : DB.dataContext) =
     async {
         let foundAlbum = query {
-            for a in ctx.Dbo.Albums do
-                where (a.Id = album.Id)
+            for a in ctx.Public.Albums do
+                where (a.Id = id)
                 select (Some a)
                 exactlyOneOrDefault
         }
         match foundAlbum with
         | Some foundAlbum ->
-            foundAlbum.Delete |> ignore
-            ctx.SubmitUpdates()
+            foundAlbum.Delete()
+            do! ctx.SubmitUpdatesAsync()
         | None -> ()
     }
 
 let deleteCart (cart : Cart) (ctx : DB.dataContext) =
     let foundCart = query {
-        for c in ctx.Dbo.Carts do
-        where (c.Cartid = cart.CartId)
+        for c in ctx.Public.Carts do
+        where (c.CartId = cart.CartId)
         select (Some c)
         exactlyOneOrDefault
     }
@@ -88,14 +88,14 @@ let deleteCart (cart : Cart) (ctx : DB.dataContext) =
 
 let getArtists (ctx : DB.dataContext) =
     query {
-        for artist in ctx.Dbo.Artists do
+        for artist in ctx.Public.Artists do
             select (artist |> artistEntityToType)
     }
     |> List.executeQueryAsync
 
 let createAlbum (artistId, genreId, price, title) (ctx : DB.dataContext) =
     async {
-        ctx.Dbo.Albums.Create(artistId, genreId, price, title) |> ignore
+        ctx.Public.Albums.Create(artistId, genreId, price, title) |> ignore
         ctx.SubmitUpdates()
     }
 
@@ -110,7 +110,7 @@ let updateAlbum (album : Album) (artistId, genreId, price, title) (ctx : DB.data
 
 let validateUser (username, password) (ctx : DB.dataContext) =
     query {
-        for user in ctx.Dbo.Users do
+        for user in ctx.Public.Users do
             where (user.Username = username && user.Password = password)
             select (user |> userEntityToType)
     }
@@ -118,8 +118,8 @@ let validateUser (username, password) (ctx : DB.dataContext) =
 
 let getCart cartId albumId (ctx : DB.dataContext) =
     query {
-        for cart in ctx.Dbo.Carts do
-            where (cart.Cartid = cartId && cart.Albumid = albumId)
+        for cart in ctx.Public.Carts do
+            where (cart.CartId = cartId && cart.AlbumId = albumId)
             select (cart |> cartEntityToType)
     }
     |> Seq.tryHeadAsync
@@ -131,14 +131,14 @@ let addToCart cartId albumId (ctx : DB.dataContext) =
         | Some cart ->
             cart.Count <- cart.Count + 1
         | None ->
-            ctx.Dbo.Carts.Create(albumId, cartId, 1, System.DateTime.UtcNow) |> ignore
+            ctx.Public.Carts.Create(albumId, cartId, 1, System.DateTime.UtcNow) |> ignore
         ctx.SubmitUpdates()
     }
 
 let getCartDetails cartId (ctx : DB.dataContext) =
     query {
-        for cart in ctx.Dbo.Cartdetails do
-            where (cart.Cartid = cartId)
+        for cart in ctx.Public.Cartdetails do
+            where (cart.CartId = cartId)
             select (cart |> cartDetailsEntityToType)
     }
     |> List.executeQueryAsync
@@ -153,8 +153,8 @@ let removeFromCart (cart : Cart) (ctx : DB.dataContext) =
 
 let getCarts cartId (ctx : DB.dataContext) =
     query {
-        for cart in ctx.Dbo.Carts do
-            where (cart.Cartid = cartId)
+        for cart in ctx.Public.Carts do
+            where (cart.CartId = cartId)
             select (cart |> cartEntityToType)
     }
     |> List.executeQueryAsync
@@ -175,14 +175,14 @@ let upgradeCarts (cartId : string, username :string) (ctx : DB.dataContext) =
 
 let getUser username (ctx : DB.dataContext) =
     query {
-        for user in ctx.Dbo.Users do
+        for user in ctx.Public.Users do
             where (user.Username = username)
             select (user |> userEntityToType)
     }
     |> Seq.tryHeadAsync
 
 let newUser (username, password, email) (ctx : DB.dataContext) =
-    let user = ctx.Dbo.Users.Create(email, password, "user", username)
+    let user = ctx.Public.Users.Create(email, password, "user", username)
     ctx.SubmitUpdates()
     async {
         return (user |> userEntityToType)
@@ -192,11 +192,11 @@ let placeOrder (username : string) (ctx : DB.dataContext) =
     async {
         let! maybeCarts = getCartDetails username ctx
         let total = maybeCarts |> List.sumBy (fun c -> decimal c.Count * c.Price)
-        let order = ctx.Dbo.Orders.Create(System.DateTime.UtcNow, total)
-        order.Username <- Some(username)
+        let order = ctx.Public.Orders.Create(System.DateTime.UtcNow, total)
+        order.Username <- username
         ctx.SubmitUpdates()
         for cart in maybeCarts do
-            ctx.Dbo.Orderdetails.Create(
+            ctx.Public.Orderdetails.Create(
                 cart.AlbumId,
                 order.Id,
                 cart.Count,

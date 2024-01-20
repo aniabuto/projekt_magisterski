@@ -1,0 +1,6 @@
+version: '3.7'
+services:
+    safe_db:
+        build: .
+        ports:
+            - "5432:5432"

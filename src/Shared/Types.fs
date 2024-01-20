@@ -4,14 +4,14 @@ open System
 
 type Genre = {
     Id : int
-    Name : string option
-    Description : string option
+    Name : string
+    Description : string
 }
 
 type Artist = {
     Id : int
-    Name : string option
-    Bio : string option
+    Name : string
+    Bio : string
 }
 
 type Album = {
@@ -20,22 +20,22 @@ type Album = {
     mutable ArtistId : int
     mutable Title : string
     mutable Price : decimal
-    Thumbnail : string option
+    Thumbnail : string
 }
 
 type Order = {
     Id : int
     OrderDate : DateTime
-    Username : string option
-    FirstName : string option
-    LastName : string option
-    Address : string option
-    City : string option
-    State : string option
-    PostalCode : string option
-    Country : string option
-    Phone : string option
-    Email : string option
+    Username : string
+    FirstName : string
+    LastName : string
+    Address : string
+    City : string
+    State : string
+    PostalCode : string
+    Country : string
+    Phone : string
+    Email : string
     Total : decimal
 }
 
@@ -67,11 +67,11 @@ type User = {
 
 type AlbumDetails = {
     AlbumId : int
-    Thumbnail : string option
+    Thumbnail : string
     Price : decimal
     Title : string
-    ArtistName : string option
-    GenreName : string option
+    ArtistName : string
+    GenreName : string
 }
 
 type CartDetails = {
@@ -85,6 +85,6 @@ type CartDetails = {
 type Bestseller = {
     AlbumId : int
     Title : string
-    Thumbnail : string option
-    Count : int
+    Thumbnail : string
+    Count : int64
 }

@@ -33,7 +33,7 @@ let getAlbums (ctx : DB.dataContext) =
 let getBestsellers (ctx : DB.dataContext) =
     Repository.getBestsellers ctx
 
-let deleteAlbum (album : Album) (ctx : DB.dataContext) =
+let deleteAlbum (album : int) (ctx : DB.dataContext) =
     Repository.deleteAlbum album ctx
 
 let createAlbum (artistId, genreId, price, title) (ctx : DB.dataContext) =

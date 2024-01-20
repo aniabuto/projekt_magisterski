@@ -14,6 +14,7 @@ type Page =
     | ArtistsList of ArtistsList.Model
     | AlbumsList of AlbumsList.Model
     | AlbumDetails of AlbumDetails.Model
+    | AlbumEdit of AlbumEdit.Model
     | NotFound
 
 type Model = {
@@ -28,6 +29,7 @@ type Msg =
     | ArtistsListMsg of ArtistsList.Msg
     | AlbumsListMsg of AlbumsList.Msg
     | AlbumDetailsMsg of AlbumDetails.Msg
+    | AlbumEditMsg of AlbumEdit.Msg
     | UrlChanged of string list
     | ChangeUser of string
     | ChangedUser of User option
@@ -55,11 +57,16 @@ let initFromUrl url user =
         let model = { CurrentPage = AlbumsList albumsListModel; CurrentUser = user; ModalShown = false }
 
         model, albumsListMsg |> Cmd.map AlbumsListMsg
-    | ["albums"; "details"; id; prev] ->
-        let albumsListModel, albumsListMsg = AlbumDetails.init (int id) (prev.Split "?prev=" |> Array.last)
+    | ["albums"; Route.Int id] ->
+        let albumsListModel, albumsListMsg = AlbumDetails.init id
         let model = { CurrentPage = AlbumDetails albumsListModel; CurrentUser = user; ModalShown = false }
 
         model, albumsListMsg |> Cmd.map AlbumDetailsMsg
+    | ["albums"; Route.Int id; "edit"] ->
+        let albumsListModel, albumsListMsg = AlbumEdit.init id
+        let model = { CurrentPage = AlbumEdit albumsListModel; CurrentUser = user; ModalShown = false }
+
+        model, albumsListMsg |> Cmd.map AlbumEditMsg
     | _ -> { CurrentPage = NotFound; CurrentUser = user; ModalShown = false }, Cmd.none
 
 
@@ -93,6 +100,11 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         let model = { model with CurrentPage = AlbumDetails newAlbumsListModel }
 
         model, newCommand |> Cmd.map AlbumDetailsMsg
+    | AlbumEdit albumsList, AlbumEditMsg albumsListMessage ->
+        let newAlbumsListModel, newCommand = AlbumEdit.update albumsListMessage albumsList
+        let model = { model with CurrentPage = AlbumEdit newAlbumsListModel }
+
+        model, newCommand |> Cmd.map AlbumEditMsg
     | _, UrlChanged url -> initFromUrl url model.CurrentUser
     // | _, UrlChanged url -> initFromUrl url
     | _, ChangeUser username ->
@@ -115,6 +127,7 @@ let containerBox model dispatch =
     | ArtistsList artistsModel -> ArtistsList.view artistsModel (ArtistsListMsg >> dispatch)
     | AlbumsList albumsModel -> AlbumsList.view albumsModel (AlbumsListMsg >> dispatch)
     | AlbumDetails albumsModel -> AlbumDetails.view albumsModel (AlbumDetailsMsg >> dispatch)
+    | AlbumEdit albumsModel -> AlbumEdit.view albumsModel (AlbumEditMsg >> dispatch)
     | NotFound -> Bulma.box "Page not found"
 
 let navBrand =

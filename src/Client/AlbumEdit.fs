@@ -1,4 +1,4 @@
-module Client.AlbumDetails
+module Client.AlbumEdit
 
 open Fable.Remoting.Client
 open Feliz.Router
@@ -11,17 +11,12 @@ open Client.Apis
 type Model = {
     AlbumDetails : AlbumDetails option
     AlbumId : int
-    DeletionConfirmation : bool
 }
 
 type Msg =
     | GotAlbumDetails of AlbumDetails option
     | RequestAlbumDetails of int
     | EditAlbum of int
-    | DeleteAlbumWarning of int
-    | CancelDeletion
-    | DeleteAlbum of int
-    | AlbumDeleted of unit
     | GoBack
 
 
@@ -29,7 +24,6 @@ let init id : Model * Cmd<Msg> =
     let model = {
         AlbumDetails = None
         AlbumId = id
-        DeletionConfirmation = false
     }
 
     let cmd = Cmd.batch [
@@ -43,15 +37,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
      | GotAlbumDetails albums ->
          { model with AlbumDetails =   albums }, Cmd.none
      | EditAlbum id ->
-         model, Cmd.navigate ("albums", id, "edit")
-     | DeleteAlbumWarning id ->
-         { model with DeletionConfirmation = true }, Cmd.none
-     | CancelDeletion ->
-         { model with DeletionConfirmation = false }, Cmd.none
-     | DeleteAlbum id ->
-         model, Cmd.OfAsyncImmediate.perform albumsApi.deleteAlbum id AlbumDeleted
-     | AlbumDeleted () ->
-         model, Cmd.navigateBack 1
+         model, Cmd.navigate ("albums", "edit", id, ["prev", $"albums/details/{id}"])
      | GoBack ->
          model, Cmd.navigateBack 1
      | _ ->
@@ -129,41 +115,13 @@ let view (model: Model) (dispatch: Msg -> unit) =
                         | None -> failwith "no image path"
                     ]
                 ]
+
             | None ->
                 Bulma.column[
                     prop.onLoad (fun _ -> RequestAlbumDetails model.AlbumId |> dispatch)
                 ]
 
-            if model.DeletionConfirmation then
-                Bulma.modal [
-                    if model.DeletionConfirmation then Bulma.modal.isActive
-                    prop.id "modal-sample"
-                    prop.children [
-                        Bulma.modalBackground []
-                        Bulma.modalContent [
-                            Bulma.box [
-                                Html.h1 "Confirm album deletion"
-                                Html.button [
-                                    text.hasTextCentered
-                                    prop.style [style.marginLeft 10]
-                                    prop.text "Delete"
-                                    prop.onClick (fun _ -> DeleteAlbum model.AlbumId |> dispatch)
-                                    color.hasTextDark
-                                ]
-                                Html.button [
-                                    text.hasTextCentered
-                                    prop.style [style.marginLeft 10]
-                                    prop.text "Cancel"
-                                    prop.onClick (fun _ -> CancelDeletion |> dispatch)
-                                    color.hasTextDark
-                                ]
-                            ]
-                        ]
-                        Bulma.modalClose [
-                            prop.onClick (fun _ -> CancelDeletion |> dispatch)
-                        ]
-                    ]
-                ]
+
 
             Html.br[]
             Html.button [
@@ -177,13 +135,6 @@ let view (model: Model) (dispatch: Msg -> unit) =
                 prop.style [style.marginLeft 10]
                 prop.text "Edit"
                 prop.onClick (fun _ -> EditAlbum model.AlbumId |> dispatch)
-                color.hasTextDark
-            ]
-            Html.button [
-                text.hasTextCentered
-                prop.style [style.marginLeft 10]
-                prop.text "Delete"
-                prop.onClick (fun _ -> DeleteAlbumWarning model.AlbumId |> dispatch)
                 color.hasTextDark
             ]
         ]

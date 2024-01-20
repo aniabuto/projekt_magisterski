@@ -51,7 +51,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
      | GotAlbumsByGenre albums ->
          { model with Albums = albums }, Cmd.none
      | GetDetails id ->
-         model, Cmd.navigate ("albums", "details", id, ["prev", "albums"])
+         model, Cmd.navigate ("albums", id)
      | _ ->
          model, Cmd.none
 
@@ -79,6 +79,70 @@ let searchForAlbum id (albums : Album list) =
     else
         albums |> List.map (fun album -> album.Id) |> List.contains id
 
+let albumsHeadRowView =
+    Html.thead [
+        prop.children [
+            Html.th [
+                prop.text "Title"
+            ]
+            Html.th [
+                prop.text "ArtistName"
+            ]
+            Html.th [
+                prop.text "GenreName"
+            ]
+            Html.th [
+                prop.text "Price"
+            ]
+            Html.th [
+                prop.text ""
+            ]
+        ]
+    ]
+
+let albumsRowView (album : AlbumDetails) (dispatch: Msg -> unit) =
+    Html.tr [
+        prop.children [
+            Html.td [
+            prop.text album.Title
+            ]
+            Html.td [
+                prop.text (album.ArtistName |> Option.get)
+            ]
+            Html.td [
+                prop.text (album.GenreName |> Option.get)
+            ]
+            Html.td [
+                prop.text (string album.Price)
+            ]
+            Html.td [
+                Html.button [
+                    prop.text "Details"
+                    prop.onClick (fun _ -> GetDetails album.AlbumId |> dispatch)
+                ]
+            ]
+        ]
+    ]
+
+
+let genresListView (genresList : Genre list) (dispatch: Msg -> unit) =
+    Bulma.select [
+        prop.onChange (fun id -> FilterByGenre id |> dispatch )
+        prop.children [
+            Html.option [
+                    prop.text ""
+                ]
+            for genre in genresList do
+                Html.option [
+                    match genre.Name with
+                    | Some gn ->
+                        prop.value gn
+                        prop.text gn
+                    | None -> failwith "todo"
+                ]
+        ]
+    ]
+
 let view (model: Model) (dispatch: Msg -> unit) =
     Bulma.box [
         Bulma.content [
@@ -87,69 +151,14 @@ let view (model: Model) (dispatch: Msg -> unit) =
                 prop.text "Albums"
                 color.hasTextDark
             ]
-            Bulma.select [
-                prop.onChange (fun id -> FilterByGenre id |> dispatch )
-                prop.children [
-                    Html.option [
-                            prop.text ""
-                        ]
-                    for genre in model.Genres do
-                        Html.option [
-                            match genre.Name with
-                            | Some gn ->
-                                prop.value gn
-                                prop.text gn
-                            | None -> failwith "todo"
-                        ]
-                ]
-            ]
-
+            genresListView model.Genres dispatch
             Bulma.table [
                 prop.children [
-                    Html.thead [
-                        prop.children [
-                            Html.th [
-                                prop.text "Title"
-                            ]
-                            Html.th [
-                                prop.text "ArtistName"
-                            ]
-                            Html.th [
-                                prop.text "GenreName"
-                            ]
-                            Html.th [
-                                prop.text "Price"
-                            ]
-                            Html.th [
-                                prop.text ""
-                            ]
-                        ]
-                    ]
+                    albumsHeadRowView
                     Html.tbody[
                         for album in model.AlbumsDetails do
                             if searchForAlbum album.AlbumId model.Albums then
-                                Html.tr [
-                                    prop.children [
-                                        Html.td [
-                                        prop.text album.Title
-                                        ]
-                                        Html.td [
-                                            prop.text (album.ArtistName |> Option.get)
-                                        ]
-                                        Html.td [
-                                            prop.text (album.GenreName |> Option.get)
-                                        ]
-                                        Html.td [
-                                            prop.text (string album.Price)
-                                        ]
-                                        Html.td [
-                                            Html.button [
-                                                prop.text "Details"
-                                                prop.onClick (fun _ -> GetDetails album.AlbumId |> dispatch)
-                                            ]
-                                        ]
-                                    ]
-                                ]
+                                albumsRowView album dispatch
                     ]
                 ]
             ]

@@ -13,6 +13,7 @@
         <Compile Include="ArtistsList.fs" />
         <Compile Include="AlbumsList.fs" />
         <Compile Include="AlbumDetails.fs" />
+        <Compile Include="AlbumEdit.fs" />
         <Compile Include="Index.fs" />
         <Compile Include="App.fs" />
         <Content Include="Info.md" />
