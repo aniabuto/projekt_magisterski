@@ -79,40 +79,23 @@ let view (model: Model) (dispatch: Msg -> unit) =
                 ]
                 Bulma.columns [
                     Bulma.column [
-                        match albumDetails.ArtistName with
-                        | Some artistName ->
-                            Bulma.label [
-                                prop.text $"Artist : %s{artistName}"
-                                color.hasTextDark
-                            ]
-                        | None ->
-                            Bulma.label [
-                                prop.text $"Artist :"
-                                color.hasTextDark
-                            ]
-                        match albumDetails.GenreName with
-                        | Some genreName ->
-                            Bulma.label [
-                                prop.text $"Genre : %s{genreName}"
-                                color.hasTextDark
-                            ]
-                        | None ->
-                            Bulma.label [
-                                prop.text $"Genre :"
-                                color.hasTextDark
-                            ]
+                        Bulma.label [
+                            prop.text $"Artist : %s{albumDetails.ArtistName}"
+                            color.hasTextDark
+                        ]
+                        Bulma.label [
+                            prop.text $"Genre : %s{albumDetails.GenreName}"
+                            color.hasTextDark
+                        ]
                         Bulma.label [
                             prop.text $"Price : %.2f{albumDetails.Price}"
                             color.hasTextDark
                         ]
                     ]
                     Bulma.column [
-                        match albumDetails.Thumbnail with
-                        | Some image ->
-                            Html.img [
-                                prop.src image
-                            ]
-                        | None -> failwith "no image path"
+                        Html.img [
+                            prop.src albumDetails.Thumbnail
+                        ]
                     ]
                 ]
 
@@ -128,13 +111,6 @@ let view (model: Model) (dispatch: Msg -> unit) =
                 text.hasTextCentered
                 prop.text "Go Back"
                 prop.onClick (fun _ -> dispatch GoBack)
-                color.hasTextDark
-            ]
-            Html.button [
-                text.hasTextCentered
-                prop.style [style.marginLeft 10]
-                prop.text "Edit"
-                prop.onClick (fun _ -> EditAlbum model.AlbumId |> dispatch)
                 color.hasTextDark
             ]
         ]

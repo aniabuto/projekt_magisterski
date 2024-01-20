@@ -81,89 +81,79 @@ let searchForAlbum id (albums : Album list) =
     else
         albums |> List.map (fun album -> album.Id) |> List.contains id
 
+let albumDetailsView (albumDetailsOption : AlbumDetails option) id dispatch =
+    match albumDetailsOption with
+    | Some albumDetails ->
+        Bulma.content [
+            Bulma.subtitle [
+            text.hasTextCentered
+            prop.text albumDetails.Title
+            color.hasTextDark
+            ]
+            Bulma.columns [
+                Bulma.column [
+                    Bulma.label [
+                        prop.text $"Artist : %s{albumDetails.ArtistName}"
+                        color.hasTextDark
+                    ]
+                    Bulma.label [
+                        prop.text $"Genre : %s{albumDetails.GenreName}"
+                        color.hasTextDark
+                    ]
+                    Bulma.label [
+                        prop.text $"Price : %.2f{albumDetails.Price}"
+                        color.hasTextDark
+                    ]
+                ]
+                Bulma.column [
+                    Html.img [
+                        prop.src albumDetails.Thumbnail
+                    ]
+                ]
+            ]
+        ]
+    | None ->
+        Bulma.column[
+            prop.onLoad (fun _ -> RequestAlbumDetails id |> dispatch)
+        ]
+
+let deletionConfirmationView (deletionConfirmation : bool) (albumId : int) dispatch =
+    Bulma.modal [
+        if deletionConfirmation then Bulma.modal.isActive
+        prop.id "modal-sample"
+        prop.children [
+            Bulma.modalBackground []
+            Bulma.modalContent [
+                Bulma.box [
+                    Html.h1 "Confirm album deletion"
+                    Html.button [
+                        text.hasTextCentered
+                        prop.style [style.marginLeft 10]
+                        prop.text "Delete"
+                        prop.onClick (fun _ -> DeleteAlbum albumId |> dispatch)
+                        color.hasTextDark
+                    ]
+                    Html.button [
+                        text.hasTextCentered
+                        prop.style [style.marginLeft 10]
+                        prop.text "Cancel"
+                        prop.onClick (fun _ -> CancelDeletion |> dispatch)
+                        color.hasTextDark
+                    ]
+                ]
+            ]
+            Bulma.modalClose [
+                prop.onClick (fun _ -> CancelDeletion |> dispatch)
+            ]
+        ]
+    ]
+
 let view (model: Model) (dispatch: Msg -> unit) =
     Bulma.box [
         Bulma.content [
-            match model.AlbumDetails with
-            | Some albumDetails ->
-                Bulma.subtitle [
-                    text.hasTextCentered
-                    prop.text albumDetails.Title
-                    color.hasTextDark
-                ]
-                Bulma.columns [
-                    Bulma.column [
-                        match albumDetails.ArtistName with
-                        | Some artistName ->
-                            Bulma.label [
-                                prop.text $"Artist : %s{artistName}"
-                                color.hasTextDark
-                            ]
-                        | None ->
-                            Bulma.label [
-                                prop.text $"Artist :"
-                                color.hasTextDark
-                            ]
-                        match albumDetails.GenreName with
-                        | Some genreName ->
-                            Bulma.label [
-                                prop.text $"Genre : %s{genreName}"
-                                color.hasTextDark
-                            ]
-                        | None ->
-                            Bulma.label [
-                                prop.text $"Genre :"
-                                color.hasTextDark
-                            ]
-                        Bulma.label [
-                            prop.text $"Price : %.2f{albumDetails.Price}"
-                            color.hasTextDark
-                        ]
-                    ]
-                    Bulma.column [
-                        match albumDetails.Thumbnail with
-                        | Some image ->
-                            Html.img [
-                                prop.src image
-                            ]
-                        | None -> failwith "no image path"
-                    ]
-                ]
-            | None ->
-                Bulma.column[
-                    prop.onLoad (fun _ -> RequestAlbumDetails model.AlbumId |> dispatch)
-                ]
+            albumDetailsView model.AlbumDetails model.AlbumId dispatch
 
-            if model.DeletionConfirmation then
-                Bulma.modal [
-                    if model.DeletionConfirmation then Bulma.modal.isActive
-                    prop.id "modal-sample"
-                    prop.children [
-                        Bulma.modalBackground []
-                        Bulma.modalContent [
-                            Bulma.box [
-                                Html.h1 "Confirm album deletion"
-                                Html.button [
-                                    text.hasTextCentered
-                                    prop.style [style.marginLeft 10]
-                                    prop.text "Delete"
-                                    prop.onClick (fun _ -> DeleteAlbum model.AlbumId |> dispatch)
-                                    color.hasTextDark
-                                ]
-                                Html.button [
-                                    text.hasTextCentered
-                                    prop.style [style.marginLeft 10]
-                                    prop.text "Cancel"
-                                    prop.onClick (fun _ -> CancelDeletion |> dispatch)
-                                    color.hasTextDark
-                                ]
-                            ]
-                        ]
-                        Bulma.modalClose [
-                            prop.onClick (fun _ -> CancelDeletion |> dispatch)
-                        ]
-                    ]
-                ]
+            deletionConfirmationView model.DeletionConfirmation model.AlbumId dispatch
 
             Html.br[]
             Html.button [

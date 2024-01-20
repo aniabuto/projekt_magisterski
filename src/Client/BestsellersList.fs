@@ -79,13 +79,13 @@ let view (model: Model) (dispatch: Msg -> unit) =
                         Html.tr [
                             prop.children [
                                 Html.td [
-                                    prop.text (album.Thumbnail |> Option.get)
+                                    prop.text album.Thumbnail
                                 ]
                                 Html.td [
                                     prop.text album.Title
                                 ]
                                 Html.td [
-                                    prop.text album.Count
+                                    prop.text (int(album.Count))
                                 ]
                                 Html.td [
                                     Html.button [

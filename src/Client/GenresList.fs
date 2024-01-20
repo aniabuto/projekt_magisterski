@@ -53,9 +53,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
                     Html.li [
                         prop.children [
                             Bulma.label [
-                                match genre.Name with
-                                | Some n -> prop.text n
-                                | None -> failwith "todo"
+                                prop.text genre.Name
                             ]
                         ]
 

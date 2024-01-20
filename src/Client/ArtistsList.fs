@@ -51,9 +51,7 @@ let view (model: Model) (_: Msg -> unit) =
             Html.ol [
                 for artist in model.Artists do
                     Html.li [
-                        match artist.Name with
-                        | Some n -> prop.text n
-                        | None -> failwith "todo"
+                        prop.text artist.Name
                     ]
             ]
         ]

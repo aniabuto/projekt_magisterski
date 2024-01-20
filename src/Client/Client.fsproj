@@ -5,6 +5,7 @@
         <DefineConstants>FABLE_COMPILER</DefineConstants>
     </PropertyGroup>
     <ItemGroup>
+        <Content Include="style.scss" />
         <None Include="index.html" />
         <None Include="paket.references" />
         <Compile Include="Apis.fs" />

@@ -107,10 +107,10 @@ let albumsRowView (album : AlbumDetails) (dispatch: Msg -> unit) =
             prop.text album.Title
             ]
             Html.td [
-                prop.text (album.ArtistName |> Option.get)
+                prop.text album.ArtistName
             ]
             Html.td [
-                prop.text (album.GenreName |> Option.get)
+                prop.text album.GenreName
             ]
             Html.td [
                 prop.text (string album.Price)
@@ -134,11 +134,8 @@ let genresListView (genresList : Genre list) (dispatch: Msg -> unit) =
                 ]
             for genre in genresList do
                 Html.option [
-                    match genre.Name with
-                    | Some gn ->
-                        prop.value gn
-                        prop.text gn
-                    | None -> failwith "todo"
+                    prop.value genre.Name
+                    prop.text genre.Name
                 ]
         ]
     ]
