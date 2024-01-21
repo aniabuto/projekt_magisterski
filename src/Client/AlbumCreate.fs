@@ -61,15 +61,13 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
      | GotGenres genres ->
          { model with Genres = genres }, Cmd.none
      | CreateAlbum ( artistId, genreId, title, price, thumbnail) ->
-         model, Cmd.OfAsyncImmediate.perform albumsApi.createAlbum (artistId, genreId, price, title, thumbnail) AlbumCreated
+         model, Cmd.OfAsyncImmediate.perform albumsAdminApi.createAlbum (artistId, genreId, price, title, thumbnail) AlbumCreated
      | FormChanged form ->
          { model with Form = form }, Cmd.none
      | AlbumCreated id ->
          model, Cmd.navigateBack 1
      | GoBack ->
          model, Cmd.navigateBack 1
-     | _ ->
-         model, Cmd.none
 
 
 open Feliz

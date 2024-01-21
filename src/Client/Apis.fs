@@ -8,6 +8,11 @@ let albumsApi =
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.buildProxy<IAlbumsApi>
 
+let albumsAdminApi =
+    Remoting.createApi ()
+    |> Remoting.withRouteBuilder Route.builder
+    |> Remoting.buildProxy<IAlbumsAdminApi>
+
 let genresApi =
     Remoting.createApi ()
     |> Remoting.withRouteBuilder Route.builder

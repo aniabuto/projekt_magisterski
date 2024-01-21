@@ -55,8 +55,6 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
          model, Cmd.navigate ("albums", id)
      | AddAlbum ->
          model, Cmd.navigate ("albums", "create")
-     | _ ->
-         model, Cmd.none
 
 
 open Feliz

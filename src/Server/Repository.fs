@@ -4,11 +4,13 @@ open FSharp.Data.Sql
 open ServerProject.Db
 open ServerProject.TypeConverter
 open Shared.Types
+open System
 
 
 let getGenres (ctx : DB.dataContext) =
     query {
         for genre in ctx.Public.Genres do
+            sortBy genre.GenresId
             select (genre |> genreEntityToType)
     } |> List.executeQueryAsync
 
@@ -65,6 +67,7 @@ let getAlbums (ctx : DB.dataContext) =
 let getBestsellers (ctx : DB.dataContext) =
     query {
         for bestseller in ctx.Public.Bestsellers do
+            sortBy bestseller.Id
             select (bestseller |> bestsellerEntityToType)
     }
     |> List.executeQueryAsync
@@ -80,7 +83,7 @@ let deleteAlbum (id : int) (ctx : DB.dataContext) =
         match foundAlbum with
         | Some foundAlbum ->
             foundAlbum.Delete()
-            do! ctx.SubmitUpdatesAsync()
+            ctx.SubmitUpdates()
         | None -> ()
     }
 
@@ -93,7 +96,7 @@ let deleteCart (cart : Cart) (ctx : DB.dataContext) =
     }
     match foundCart with
     | Some foundCart ->
-        foundCart.Delete |> ignore
+        foundCart.Delete()
         ctx.SubmitUpdates()
     | None -> ()
 
@@ -130,7 +133,15 @@ let updateAlbum (albumId : int) (title, price, thumbnail) (ctx : DB.dataContext)
         | None -> ()
     }
 
-let validateUser (username, password) (ctx : DB.dataContext) =
+let passHash (pass : string) =
+    use sha = Security.Cryptography.SHA256.Create()
+    Text.Encoding.UTF8.GetBytes(pass)
+    |> sha.ComputeHash
+    |> Array.map (fun b -> b.ToString("x2"))
+    |> String.concat ""
+
+let validateUser (username, pass) (ctx : DB.dataContext) =
+    let password = passHash pass
     query {
         for user in ctx.Public.Users do
             where (user.Username = username && user.Password = password)
@@ -176,6 +187,7 @@ let removeFromCart (cart : Cart) (ctx : DB.dataContext) =
 let getCarts cartId (ctx : DB.dataContext) =
     query {
         for cart in ctx.Public.Carts do
+            sortBy cart.Id
             where (cart.CartId = cartId)
             select (cart |> cartEntityToType)
     }
@@ -203,7 +215,8 @@ let getUser username (ctx : DB.dataContext) =
     }
     |> Seq.tryHeadAsync
 
-let newUser (username, password, email) (ctx : DB.dataContext) =
+let newUser (username, pass, email) (ctx : DB.dataContext) =
+    let password = passHash pass
     let user = ctx.Public.Users.Create(email, password, "user", username)
     ctx.SubmitUpdates()
     async {

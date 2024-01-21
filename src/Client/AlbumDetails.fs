@@ -49,7 +49,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
      | CancelDeletion ->
          { model with DeletionConfirmation = false }, Cmd.none
      | DeleteAlbum id ->
-         model, Cmd.OfAsyncImmediate.perform albumsApi.deleteAlbum id AlbumDeleted
+         model, Cmd.OfAsyncImmediate.perform albumsAdminApi.deleteAlbum id AlbumDeleted
      | AlbumDeleted () ->
          model, Cmd.navigateBack 1
      | GoBack ->

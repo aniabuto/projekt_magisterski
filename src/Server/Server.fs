@@ -10,6 +10,7 @@ open Shared
 
 // let connectionString = @"Server=localhost\SQLEXPRESS;Database=SafeMusicStore;Trusted_Connection=True;"
 let connectionString = Db.TPConnectionString
+
 let genresApi =
     let db = Db.createContext connectionString
     {
@@ -31,6 +32,11 @@ let albumsApi =
         getAlbum = fun id -> Controller.getAlbum id db
         getAlbums = fun () -> Controller.getAlbums db
         getBestsellers = fun () -> Controller.getBestsellers db
+    }
+
+let albumsAdminApi =
+    let db = Db.createContext connectionString
+    {
         deleteAlbum = fun album -> Controller.deleteAlbum album db
         createAlbum = fun (artistId, genreId, price, title, thumbnail) -> Controller.createAlbum (artistId, genreId, price, title, thumbnail) db
         updateAlbum = fun (albumId, title, price, thumbnail) -> Controller.updateAlbum albumId (title, price, thumbnail) db
