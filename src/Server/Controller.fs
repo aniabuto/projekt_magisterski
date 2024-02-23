@@ -62,7 +62,14 @@ let updateCarts (cartId : string, username :string) (ctx : DB.dataContext) =
     Repository.upgradeCarts (cartId, username) ctx
 
 let validateUser (username, password) (ctx : DB.dataContext) =
-    Repository.validateUser (username, password) ctx
+    Repository.validateUserAsync (username, password) ctx
+
+let login (username, password) (ctx : DB.dataContext) =
+    match Repository.validateUser (username, password) ctx with
+    | Some user ->
+            async{return Authorize.login { UserName = user.Username; Password = user.Password}}
+    | None ->
+        failwith $"User '{username}' can't be logged in"
 
 let getUser username (ctx : DB.dataContext) =
     Repository.getUser username ctx

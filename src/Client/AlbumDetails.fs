@@ -25,7 +25,7 @@ type Msg =
     | GoBack
 
 
-let init id : Model * Cmd<Msg> =
+let init id (guestApi: IGuestApi) : Model * Cmd<Msg> =
     let model = {
         AlbumDetails = None
         AlbumId = id
@@ -33,12 +33,12 @@ let init id : Model * Cmd<Msg> =
     }
 
     let cmd = Cmd.batch [
-        Cmd.OfAsync.perform albumsApi.getAlbumDetails id GotAlbumDetails
+        Cmd.OfAsync.perform guestApi.getAlbumDetails id GotAlbumDetails
     ]
 
     model, cmd
 
-let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let update (authorizedApi : IAuthorizedApi) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
      | GotAlbumDetails albums ->
          { model with AlbumDetails =   albums }, Cmd.none
@@ -49,7 +49,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
      | CancelDeletion ->
          { model with DeletionConfirmation = false }, Cmd.none
      | DeleteAlbum id ->
-         model, Cmd.OfAsyncImmediate.perform albumsAdminApi.deleteAlbum id AlbumDeleted
+         model, Cmd.OfAsyncImmediate.perform authorizedApi.deleteAlbum id AlbumDeleted
      | AlbumDeleted () ->
          model, Cmd.navigateBack 1
      | GoBack ->

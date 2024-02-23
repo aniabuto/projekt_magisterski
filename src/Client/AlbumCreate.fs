@@ -40,7 +40,7 @@ type Msg =
     | GoBack
 
 
-let init () : Model * Cmd<Msg> =
+let init (authorizedApi: IAuthorizedApi) (userName : UserName) : Model * Cmd<Msg> =
     let model = {
         Form = Form.View.idle { Title = ""; Thumbnail = placeholderString; Price = string(Decimal.Zero); Artist = "0"; Genre = "0" }
         Artists = []
@@ -48,20 +48,20 @@ let init () : Model * Cmd<Msg> =
     }
 
     let cmd = Cmd.batch [
-        Cmd.OfAsync.perform artistsApi.getArtists () GotArtists
-        Cmd.OfAsync.perform genresApi.getGenres () GotGenres
+        Cmd.OfAsync.perform guestApi .getArtists () GotArtists
+        Cmd.OfAsync.perform guestApi.getGenres () GotGenres
     ]
 
     model, cmd
 
-let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let update (authorizedApi: IAuthorizedApi) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
      | GotArtists artists ->
          { model with Artists =  artists }, Cmd.none
      | GotGenres genres ->
          { model with Genres = genres }, Cmd.none
      | CreateAlbum ( artistId, genreId, title, price, thumbnail) ->
-         model, Cmd.OfAsyncImmediate.perform albumsAdminApi.createAlbum (artistId, genreId, price, title, thumbnail) AlbumCreated
+         model, Cmd.OfAsyncImmediate.perform authorizedApi.createAlbum (artistId, genreId, price, title, thumbnail) AlbumCreated
      | FormChanged form ->
          { model with Form = form }, Cmd.none
      | AlbumCreated id ->

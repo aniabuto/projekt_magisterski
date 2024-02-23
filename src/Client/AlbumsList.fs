@@ -23,7 +23,7 @@ type Msg =
     | AddAlbum
 
 
-let init () : Model * Cmd<Msg> =
+let init (guestApi: IGuestApi) : Model * Cmd<Msg> =
     let model = {
         Albums = []
         AlbumsDetails = []
@@ -31,8 +31,8 @@ let init () : Model * Cmd<Msg> =
     }
 
     let cmd = Cmd.batch [
-        Cmd.OfAsync.perform albumsApi.getAlbumsDetails () GotAlbumsDetails
-        Cmd.OfAsync.perform genresApi.getGenres () GotGenres
+        Cmd.OfAsync.perform guestApi.getAlbumsDetails () GotAlbumsDetails
+        Cmd.OfAsync.perform guestApi.getGenres () GotGenres
     ]
 
     model, cmd
@@ -47,7 +47,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
          if genre = "" then
              { model with Albums = [] }, Cmd.none
          else
-             let cmd = Cmd.OfAsync.perform albumsApi.getAlbumsForGenre genre GotAlbumsByGenre
+             let cmd = Cmd.OfAsync.perform guestApi.getAlbumsForGenre genre GotAlbumsByGenre
              model, cmd
      | GotAlbumsByGenre albums ->
          { model with Albums = albums }, Cmd.none
@@ -83,20 +83,22 @@ let searchForAlbum id (albums : Album list) =
 let albumsHeadRowView =
     Html.thead [
         prop.children [
-            Html.th [
-                prop.text "Title"
-            ]
-            Html.th [
-                prop.text "ArtistName"
-            ]
-            Html.th [
-                prop.text "GenreName"
-            ]
-            Html.th [
-                prop.text "Price"
-            ]
-            Html.th [
-                prop.text ""
+            Html.tr [
+                Html.th [
+                    prop.text "Title"
+                ]
+                Html.th [
+                    prop.text "ArtistName"
+                ]
+                Html.th [
+                    prop.text "GenreName"
+                ]
+                Html.th [
+                    prop.text "Price"
+                ]
+                Html.th [
+                    prop.text ""
+                ]
             ]
         ]
     ]
@@ -165,7 +167,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
         Bulma.content [
             Bulma.subtitle [
                 text.hasTextCentered
-                prop.text "Albums"
+                prop.text "Albums List"
                 color.hasTextDark
             ]
             genresListView model.Genres dispatch

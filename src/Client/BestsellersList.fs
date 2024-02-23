@@ -16,7 +16,7 @@ type Msg =
 let init () : Model * Cmd<Msg> =
     let model = { Bestsellers = [] }
 
-    let cmd = Cmd.OfAsync.perform albumsApi.getBestsellers () GotBestsellers
+    let cmd = Cmd.OfAsync.perform guestApi.getBestsellers () GotBestsellers
 
     model, cmd
 

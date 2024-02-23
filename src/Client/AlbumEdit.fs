@@ -35,7 +35,7 @@ type Msg =
     | GoBack
 
 
-let init id : Model * Cmd<Msg> =
+let init id (authorizedApi: IAuthorizedApi) (userName : UserName) : Model * Cmd<Msg> =
     let model = {
         AlbumDetails = None
         AlbumId = id
@@ -43,12 +43,12 @@ let init id : Model * Cmd<Msg> =
     }
 
     let cmd = Cmd.batch [
-        Cmd.OfAsync.perform albumsApi.getAlbumDetails id GotAlbumDetails
+        Cmd.OfAsync.perform guestApi.getAlbumDetails id GotAlbumDetails
     ]
 
     model, cmd
 
-let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let update (authorizedApi: IAuthorizedApi) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
      | GotAlbumDetails albums ->
          match albums with
@@ -63,7 +63,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
                     Form = Form.View.idle { Title = ""; Thumbnail = ""; Price = string(Decimal.Zero) }
                 }, Cmd.none
      | EditAlbum ( title, price, thumbnail) ->
-         model, Cmd.OfAsyncImmediate.perform albumsAdminApi.updateAlbum (model.AlbumId, title, price, thumbnail) AlbumEdited
+         model, Cmd.OfAsyncImmediate.perform authorizedApi.updateAlbum (model.AlbumId, title, price, thumbnail) AlbumEdited
      | FormChanged form ->
          { model with Form = form }, Cmd.none
      | AlbumEdited () ->

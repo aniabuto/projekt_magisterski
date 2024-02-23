@@ -1,5 +1,6 @@
 module Client.Index
 
+open System
 open Elmish
 open Fable.Import
 open Feliz.Bulma
@@ -11,11 +12,13 @@ open Client.Apis
 open Fable.Form.Simple
 open Fable.Form.Simple.Bulma
 open Fable.Core.JsInterop
+open Browser
+open Client.Exceptions
 
 type Page =
-    | BestsellersList of BestsellersList.Model
-    | GenresList of GenresList.Model
-    | ArtistsList of ArtistsList.Model
+    // | BestsellersList of BestsellersList.Model
+    // | GenresList of GenresList.Model
+    // | ArtistsList of ArtistsList.Model
     | AlbumsList of AlbumsList.Model
     | AlbumDetails of AlbumDetails.Model
     | AlbumEdit of AlbumEdit.Model
@@ -38,9 +41,13 @@ type RegisterValues = {
 
 type RegisterForm = Form.View.Model<RegisterValues>
 
+type User =
+    | Guest
+    | User of UserData
+
 type Model = {
     CurrentPage : Page
-    CurrentUser : User option
+    CurrentUser : User
     LModalShown : bool
     RModalShown : bool
     LoginForm : LoginForm
@@ -56,148 +63,162 @@ type Msg =
     | AlbumEditMsg of AlbumEdit.Msg
     | AlbumCreateMsg of AlbumCreate.Msg
     | UrlChanged of string list
-    | ChangeUser of string
-    | ChangedUser of User option
-    | RegisteredUser of User
     | ToggleLModal of bool
     | ToggleRModal of bool
     | LoginFormChanged of LoginForm
-    | RegisterFormChanged of RegisterForm
     | Login of string * string
+    | ChangedUser of UserData
+    | Logout
+    | RegisterFormChanged of RegisterForm
     | Register of string * string * string
+    | RegisteredUser of Shared.Types.User
+    | UserChangeSuccess of unit
+    | OnSessionChange
+    | LoggedOut of unit
+    | Fail of exn
     | GoBack
 
-let getCookieValue (cookieName : string) : string option =
-    let cookieArray = Browser.Dom.document.cookie.Split [|';'|] |> Array.toList
-
-    let rec findCookie (cookies : string list) =
-        match cookies with
-        | [] -> None
-        | cookie :: rest ->
-            let parts = cookie.Split [|'='|]
-            if parts.Length = 2 && parts.[0].Trim() = cookieName then Some (parts.[1].Trim())
-            else findCookie rest
-
-    findCookie cookieArray
-
-let setCookie(cookieName: string, cookieValue: string) =
-    Browser.Dom.document.cookie <- sprintf "%s=%s" cookieName cookieValue
-
-let initFromUrl url user =
-    let model = {
-                  CurrentPage = NotFound
-                  CurrentUser = user
-                  LModalShown = false
-                  RModalShown = false
-                  LoginForm = Form.View.idle { LUsername = ""; LPassword = "" }
-                  RegisterForm = Form.View.idle { Username = ""; Email = ""; Password = "" } }
-
+let initFromUrl model url =
+    // let model = {
+    //               CurrentPage = NotFound
+    //               CurrentUser = user
+    //               LModalShown = false
+    //               RModalShown = false
+    //               LoginForm = Form.View.idle { LUsername = ""; LPassword = "" }
+    //               RegisterForm = Form.View.idle { Username = ""; Email = ""; Password = "" } }
     match url with
-    | ["bestsellers"] ->
-        let bestsellersListModel, bestsellersListMsg = BestsellersList.init ()
-        { model with CurrentPage = BestsellersList bestsellersListModel}, bestsellersListMsg |> Cmd.map BestsellersListMsg
-    | ["genres"] ->
-        match user with
-        | Some _ ->
-            let genresListModel, genresListMsg = GenresList.init ()
-            { model with CurrentPage = GenresList genresListModel}, genresListMsg |> Cmd.map GenresListMsg
-        | None -> { model with CurrentPage = NotAuthorized }, Cmd.none
-    | ["artists"] ->
-        match user with
-        | Some _ ->
-            let artistsListModel, artistsListMsg = ArtistsList.init ()
-            { model with CurrentPage = ArtistsList artistsListModel}, artistsListMsg |> Cmd.map ArtistsListMsg
-        | None -> { model with CurrentPage = NotAuthorized }, Cmd.none
+    | [] ->
+        model, Cmd.none
+    // | ["bestsellers"] ->
+    //     let bestsellersListModel, bestsellersListMsg = BestsellersList.init ()
+    //     { model with CurrentPage = BestsellersList bestsellersListModel}, bestsellersListMsg |> Cmd.map BestsellersListMsg
+    // | ["genres"] ->
+    //     match user with
+    //     | Some _ ->
+    //         let genresListModel, genresListMsg = GenresList.init ()
+    //         { model with CurrentPage = GenresList genresListModel}, genresListMsg |> Cmd.map GenresListMsg
+    //     | None -> { model with CurrentPage = NotAuthorized }, Cmd.none
+    // | ["artists"] ->
+    //     match user with
+    //     | Some _ ->
+    //         let artistsListModel, artistsListMsg = ArtistsList.init ()
+    //         { model with CurrentPage = ArtistsList artistsListModel}, artistsListMsg |> Cmd.map ArtistsListMsg
+    //     | None -> { model with CurrentPage = NotAuthorized }, Cmd.none
     | ["albums"] ->
-        let albumsListModel, albumsListMsg = AlbumsList.init ()
+        let albumsListModel, albumsListMsg = AlbumsList.init guestApi
         { model with CurrentPage = AlbumsList albumsListModel}, albumsListMsg |> Cmd.map AlbumsListMsg
     | ["albums"; Route.Int id] ->
-        let albumsListModel, albumsListMsg = AlbumDetails.init id
+        let albumsListModel, albumsListMsg = AlbumDetails.init id guestApi
         { model with CurrentPage = AlbumDetails albumsListModel}, albumsListMsg |> Cmd.map AlbumDetailsMsg
     | ["albums"; Route.Int id; "edit"] ->
-        match user with
-        | Some u ->
-            if u.Role = "admin" then
-                let albumsListModel, albumsListMsg = AlbumEdit.init id
-                { model with CurrentPage = AlbumEdit albumsListModel}, albumsListMsg |> Cmd.map AlbumEditMsg
-            else
-                { model with CurrentPage = NotAuthorized }, Cmd.none
-        | None -> { model with CurrentPage = NotAuthorized }, Cmd.none
+        match model.CurrentUser with
+        | User u ->
+            let albumsListModel, albumsListMsg = AlbumEdit.init id (authorizedApi u.Token) u.UserName
+            { model with CurrentPage = AlbumEdit albumsListModel}, albumsListMsg |> Cmd.map AlbumEditMsg
+        | Guest -> { model with CurrentPage = NotAuthorized }, Cmd.none
     | ["albums"; "create"] ->
-        match user with
-        | Some u ->
-            if u.Role = "admin" then
-                let albumsListModel, albumsListMsg = AlbumCreate.init ()
-                { model with CurrentPage = AlbumCreate albumsListModel}, albumsListMsg |> Cmd.map AlbumCreateMsg
-            else
-                { model with CurrentPage = NotAuthorized }, Cmd.none
-        | None -> { model with CurrentPage = NotAuthorized }, Cmd.none
+        match model.CurrentUser with
+        | User u ->
+            let albumsListModel, albumsListMsg = AlbumCreate.init (authorizedApi u.Token) u.UserName
+            { model with CurrentPage = AlbumCreate albumsListModel}, albumsListMsg |> Cmd.map AlbumCreateMsg
+        | Guest -> { model with CurrentPage = NotAuthorized }, Cmd.none
     | _ -> model, Cmd.none
 
 let init () : Model * Cmd<Msg> =
-    match getCookieValue "user" with
-    | Some u ->
-        let model, cmd = initFromUrl (Router.currentUrl ()) None
-        model, Cmd.OfAsync.perform usersApi.getUser u ChangedUser
-    | None ->
-        initFromUrl (Router.currentUrl ()) None
+    let model, _ = AlbumsList.init guestApi
+    let user =
+        Session.loadUser ()
+        |> Option.map User
+        |> Option.defaultValue Guest
+
+    Router.currentUrl ()
+    |> initFromUrl {
+        CurrentPage = AlbumsList model
+        CurrentUser = user
+        LModalShown = false
+        RModalShown = false
+        LoginForm = Form.View.idle { LUsername = ""; LPassword = "" }
+        RegisterForm = Form.View.idle { Username = ""; Email = ""; Password = "" }
+    }
 
 let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
     match model.CurrentPage, message with
-    | BestsellersList bestsellersList, BestsellersListMsg bestsellersListMessage ->
-        let newBestsellersListModel, newCommand = BestsellersList.update bestsellersListMessage bestsellersList
-        let model = { model with CurrentPage = BestsellersList newBestsellersListModel }
-
-        model, newCommand |> Cmd.map BestsellersListMsg
-    | GenresList genresList, GenresListMsg genresListMessage ->
-        let newGenresListModel, newCommand = GenresList.update genresListMessage genresList
-        let model = { model with CurrentPage = GenresList newGenresListModel }
-
-        model, newCommand |> Cmd.map GenresListMsg
-    | ArtistsList artistsList, ArtistsListMsg artistsListMessage ->
-        let newArtistsListModel, newCommand = ArtistsList.update artistsListMessage artistsList
-        let model = { model with CurrentPage = ArtistsList newArtistsListModel }
-
-        model, newCommand |> Cmd.map ArtistsListMsg
+    // | BestsellersList bestsellersList, BestsellersListMsg bestsellersListMessage ->
+    //     let newBestsellersListModel, newCommand = BestsellersList.update bestsellersListMessage bestsellersList
+    //     let model = { model with CurrentPage = BestsellersList newBestsellersListModel }
+    //
+    //     model, newCommand |> Cmd.map BestsellersListMsg
+    // | GenresList genresList, GenresListMsg genresListMessage ->
+    //     let newGenresListModel, newCommand = GenresList.update genresListMessage genresList
+    //     let model = { model with CurrentPage = GenresList newGenresListModel }
+    //
+    //     model, newCommand |> Cmd.map GenresListMsg
+    // | ArtistsList artistsList, ArtistsListMsg artistsListMessage ->
+    //     let newArtistsListModel, newCommand = ArtistsList.update artistsListMessage artistsList
+    //     let model = { model with CurrentPage = ArtistsList newArtistsListModel }
+    //
+    //     model, newCommand |> Cmd.map ArtistsListMsg
     | AlbumsList albumsList, AlbumsListMsg albumsListMessage ->
         let newAlbumsListModel, newCommand = AlbumsList.update albumsListMessage albumsList
         let model = { model with CurrentPage = AlbumsList newAlbumsListModel }
 
         model, newCommand |> Cmd.map AlbumsListMsg
     | AlbumDetails albumsList, AlbumDetailsMsg albumsListMessage ->
-        let newAlbumsListModel, newCommand = AlbumDetails.update albumsListMessage albumsList
+        let token =
+            match model.CurrentUser with
+            | User data -> data.Token
+            | Guest -> ""
+        let newAlbumsListModel, newCommand = AlbumDetails.update (authorizedApi token) albumsListMessage albumsList
         let model = { model with CurrentPage = AlbumDetails newAlbumsListModel }
 
         model, newCommand |> Cmd.map AlbumDetailsMsg
     | AlbumEdit albumsList, AlbumEditMsg albumsListMessage ->
-        let newAlbumsListModel, newCommand = AlbumEdit.update albumsListMessage albumsList
+        let token =
+            match model.CurrentUser with
+            | User data -> data.Token
+            | Guest -> ""
+        let newAlbumsListModel, newCommand = AlbumEdit.update (authorizedApi token) albumsListMessage albumsList
         let model = { model with CurrentPage = AlbumEdit newAlbumsListModel }
 
         model, newCommand |> Cmd.map AlbumEditMsg
     | AlbumCreate albumsList, AlbumCreateMsg albumsListMessage ->
-        let newAlbumsListModel, newCommand = AlbumCreate.update albumsListMessage albumsList
+        let token =
+            match model.CurrentUser with
+            | User data -> data.Token
+            | Guest -> ""
+        let newAlbumsListModel, newCommand = AlbumCreate.update (authorizedApi token) albumsListMessage albumsList
         let model = { model with CurrentPage = AlbumCreate newAlbumsListModel }
 
         model, newCommand |> Cmd.map AlbumCreateMsg
-    | _, UrlChanged url -> initFromUrl url model.CurrentUser
-    | _, ChangeUser username ->
-        setCookie ("user", username)
-        let cmd = Cmd.OfAsync.perform usersApi.getUser username ChangedUser
-        model, cmd
+    | _, UrlChanged url -> initFromUrl model url
     | _, Login (username, password) ->
-        let cmd = Cmd.OfAsync.perform usersApi.validateUser (username, password) ChangedUser
-        model, cmd
-    | _, Register (username, email, password) ->
-        let cmd = Cmd.OfAsync.perform usersApi.newUser (username, password, email) RegisteredUser
-        model, cmd
+        let cmd = Cmd.OfAsync.perform guestApi.login (username, password) ChangedUser
+        { model with LoginForm = Form.View.idle { LUsername = ""; LPassword = "" }}, cmd
     | _, ChangedUser user ->
-        match user with
-        | Some u -> setCookie ("user", u.Username)
-        | None -> "" |> ignore
-        initFromUrl (Router.currentUrl ()) user
+        { model with LModalShown = false }, Cmd.OfFunc.either Session.saveUser user UserChangeSuccess Fail
+    | _,  UserChangeSuccess _ ->
+        { model with LModalShown = false }, Cmd.ofMsg OnSessionChange
+    | _, Fail ex ->
+        model, Cmd.none
+    | _, Logout ->
+
+        model, Cmd.OfFunc.either Session.deleteUser () LoggedOut Fail
+    | _, LoggedOut _ ->
+        { model with CurrentUser = Guest }, Cmd.navigate "albums"
+    | _, Register (username, email, password) ->
+        let cmd = Cmd.OfAsync.perform guestApi.newUser (username, password, email) RegisteredUser
+        { model with RegisterForm = Form.View.idle { Username = ""; Email = ""; Password = "" }}, cmd
+    | _, OnSessionChange ->
+        let session = Session.loadUser ()
+        let user = session |> Option.map User |> Option.defaultValue Guest
+        let cmd =
+            session
+            |> Option.map (fun _ -> Cmd.none)
+            |> Option.defaultValue (Cmd.navigate "albums")
+        { model with CurrentUser = user }, cmd
     | _, RegisteredUser user ->
-        setCookie ("user", user.Username)
-        initFromUrl (Router.currentUrl ()) (Some user)
+        let cmd = Cmd.OfAsync.perform guestApi.login (user.Username, user.Password) ChangedUser
+        model, cmd
     | _, LoginFormChanged form ->
         { model with LoginForm = form }, Cmd.none
     | _, RegisterFormChanged form ->
@@ -208,7 +229,7 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         {model with RModalShown = value }, Cmd.none
     | _, GoBack ->
         model, Cmd.navigateBack 1
-    | _, _ -> initFromUrl (Router.currentUrl ()) model.CurrentUser
+    | _, _ -> initFromUrl model (Router.currentUrl ())
 
 
 let notAuthorizedView dispatch =
@@ -227,9 +248,9 @@ let notAuthorizedView dispatch =
 
 let containerBox model dispatch =
     match model.CurrentPage with
-    | BestsellersList bestsellersModel -> BestsellersList.view bestsellersModel (BestsellersListMsg >> dispatch)
-    | GenresList genresModel -> GenresList.view genresModel (GenresListMsg >> dispatch)
-    | ArtistsList artistsModel -> ArtistsList.view artistsModel (ArtistsListMsg >> dispatch)
+    // | BestsellersList bestsellersModel -> BestsellersList.view bestsellersModel (BestsellersListMsg >> dispatch)
+    // | GenresList genresModel -> GenresList.view genresModel (GenresListMsg >> dispatch)
+    // | ArtistsList artistsModel -> ArtistsList.view artistsModel (ArtistsListMsg >> dispatch)
     | AlbumsList albumsModel -> AlbumsList.view albumsModel (AlbumsListMsg >> dispatch)
     | AlbumDetails albumsModel -> AlbumDetails.view albumsModel (AlbumDetailsMsg >> dispatch)
     | AlbumEdit albumsModel -> AlbumEdit.view albumsModel (AlbumEditMsg >> dispatch)
@@ -253,6 +274,18 @@ let navBrand =
 
 let toggleLogInModal (model : Model) =
     { model with LModalShown = true }
+
+let validateUsername name =
+    if String.IsNullOrWhiteSpace name |> not then
+        Ok name
+    else
+        Error "You need to fill in a username."
+
+let validatePassword password =
+    if String.IsNullOrWhiteSpace password |> not then
+        Ok password
+    else
+        Error "You need to fill in a password."
 
 let loginForm _ : Form.Form<LoginValues, Msg, _> =
     let usernameField =
@@ -365,16 +398,16 @@ let view (model: Model) (dispatch: Msg -> unit) =
                                 prop.text "SAFE Music Store"
                             ]
                             match model.CurrentUser with
-                            | Some user ->
+                            | User user ->
                                 Bulma.subtitle [
                                     text.hasTextCentered
-                                    prop.text user.Username
+                                    prop.text user.UserName.Value
                                 ]
                                 Html.button [
                                     prop.text "Log Out"
-                                    prop.onClick (fun _ -> ChangeUser "" |> dispatch)
+                                    prop.onClick (fun _ -> Logout |> dispatch)
                                 ]
-                            | None ->
+                            | Guest ->
                                 Bulma.button.button [
                                     prop.ariaHasPopup true
                                     prop.target "modal-login"
@@ -436,3 +469,18 @@ let view (model: Model) (dispatch: Msg -> unit) =
             ]
         ]
     ]
+
+
+let resetStorage onResetStorageMsg =
+    let register dispatch =
+        let callback _ = dispatch onResetStorageMsg
+        window.addEventListener ("storage", callback)
+
+        { new IDisposable with
+            member _.Dispose() =
+                window.removeEventListener ("storage", callback)
+        }
+
+    register
+
+let subscribe _ = [ [ "resetStorage" ], resetStorage OnSessionChange ]

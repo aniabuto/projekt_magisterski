@@ -14,7 +14,7 @@ type Msg =
 let init () : Model * Cmd<Msg> =
     let model = { Genres = [] }
 
-    let cmd = Cmd.OfAsync.perform genresApi.getGenres () GotGenres
+    let cmd = Cmd.OfAsync.perform guestApi.getGenres () GotGenres
 
     model, cmd
 

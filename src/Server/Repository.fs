@@ -140,7 +140,7 @@ let passHash (pass : string) =
     |> Array.map (fun b -> b.ToString("x2"))
     |> String.concat ""
 
-let validateUser (username, pass) (ctx : DB.dataContext) =
+let validateUserAsync (username, pass) (ctx : DB.dataContext) =
     let password = passHash pass
     query {
         for user in ctx.Public.Users do
@@ -148,6 +148,15 @@ let validateUser (username, pass) (ctx : DB.dataContext) =
             select (user |> userEntityToType)
     }
     |> Seq.tryHeadAsync
+
+let validateUser (username, pass) (ctx : DB.dataContext) =
+    let password = passHash pass
+    query {
+        for user in ctx.Public.Users do
+            where (user.Username = username && user.Password = password)
+            select (user |> userEntityToType)
+    }
+    |> Seq.tryHead
 
 let getCart cartId albumId (ctx : DB.dataContext) =
     query {
@@ -220,7 +229,8 @@ let newUser (username, pass, email) (ctx : DB.dataContext) =
     let user = ctx.Public.Users.Create(email, password, "user", username)
     ctx.SubmitUpdates()
     async {
-        return (user |> userEntityToType)
+        let u = user |> userEntityToType
+        return {u with Password = pass }
     }
 
 let placeOrder (username : string) (ctx : DB.dataContext) =

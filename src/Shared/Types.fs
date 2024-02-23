@@ -88,3 +88,20 @@ type Bestseller = {
     Thumbnail : string
     Count : int64
 }
+
+
+type Login = {
+    UserName: string
+    Password: string
+}
+
+type JWT = string
+
+type UserName =
+    | UserName of string
+
+    member this.Value =
+        match this with
+        | UserName v -> v
+
+type UserData = { UserName: UserName; Token: JWT }

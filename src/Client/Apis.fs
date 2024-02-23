@@ -3,27 +3,14 @@ module Client.Apis
 open Fable.Remoting.Client
 open Shared
 
-let albumsApi =
+let guestApi =
     Remoting.createApi ()
     |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.buildProxy<IAlbumsApi>
+    |> Remoting.buildProxy<IGuestApi>
 
-let albumsAdminApi =
+let authorizedApi token =
+    let bearer = $"Bearer {token}"
     Remoting.createApi ()
+    |> Remoting.withAuthorizationHeader bearer
     |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.buildProxy<IAlbumsAdminApi>
-
-let genresApi =
-    Remoting.createApi ()
-    |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.buildProxy<IGenresApi>
-
-let artistsApi =
-    Remoting.createApi ()
-    |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.buildProxy<IArtistsApi>
-
-let usersApi =
-    Remoting.createApi ()
-    |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.buildProxy<IUsersApi>
+    |> Remoting.buildProxy<IAuthorizedApi>
