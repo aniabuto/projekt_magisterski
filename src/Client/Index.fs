@@ -16,9 +16,6 @@ open Browser
 open Client.Exceptions
 
 type Page =
-    // | BestsellersList of BestsellersList.Model
-    // | GenresList of GenresList.Model
-    // | ArtistsList of ArtistsList.Model
     | AlbumsList of AlbumsList.Model
     | AlbumDetails of AlbumDetails.Model
     | AlbumEdit of AlbumEdit.Model
@@ -79,31 +76,9 @@ type Msg =
     | GoBack
 
 let initFromUrl model url =
-    // let model = {
-    //               CurrentPage = NotFound
-    //               CurrentUser = user
-    //               LModalShown = false
-    //               RModalShown = false
-    //               LoginForm = Form.View.idle { LUsername = ""; LPassword = "" }
-    //               RegisterForm = Form.View.idle { Username = ""; Email = ""; Password = "" } }
     match url with
     | [] ->
         model, Cmd.none
-    // | ["bestsellers"] ->
-    //     let bestsellersListModel, bestsellersListMsg = BestsellersList.init ()
-    //     { model with CurrentPage = BestsellersList bestsellersListModel}, bestsellersListMsg |> Cmd.map BestsellersListMsg
-    // | ["genres"] ->
-    //     match user with
-    //     | Some _ ->
-    //         let genresListModel, genresListMsg = GenresList.init ()
-    //         { model with CurrentPage = GenresList genresListModel}, genresListMsg |> Cmd.map GenresListMsg
-    //     | None -> { model with CurrentPage = NotAuthorized }, Cmd.none
-    // | ["artists"] ->
-    //     match user with
-    //     | Some _ ->
-    //         let artistsListModel, artistsListMsg = ArtistsList.init ()
-    //         { model with CurrentPage = ArtistsList artistsListModel}, artistsListMsg |> Cmd.map ArtistsListMsg
-    //     | None -> { model with CurrentPage = NotAuthorized }, Cmd.none
     | ["albums"] ->
         let albumsListModel, albumsListMsg = AlbumsList.init guestApi
         { model with CurrentPage = AlbumsList albumsListModel}, albumsListMsg |> Cmd.map AlbumsListMsg
@@ -143,21 +118,6 @@ let init () : Model * Cmd<Msg> =
 
 let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
     match model.CurrentPage, message with
-    // | BestsellersList bestsellersList, BestsellersListMsg bestsellersListMessage ->
-    //     let newBestsellersListModel, newCommand = BestsellersList.update bestsellersListMessage bestsellersList
-    //     let model = { model with CurrentPage = BestsellersList newBestsellersListModel }
-    //
-    //     model, newCommand |> Cmd.map BestsellersListMsg
-    // | GenresList genresList, GenresListMsg genresListMessage ->
-    //     let newGenresListModel, newCommand = GenresList.update genresListMessage genresList
-    //     let model = { model with CurrentPage = GenresList newGenresListModel }
-    //
-    //     model, newCommand |> Cmd.map GenresListMsg
-    // | ArtistsList artistsList, ArtistsListMsg artistsListMessage ->
-    //     let newArtistsListModel, newCommand = ArtistsList.update artistsListMessage artistsList
-    //     let model = { model with CurrentPage = ArtistsList newArtistsListModel }
-    //
-    //     model, newCommand |> Cmd.map ArtistsListMsg
     | AlbumsList albumsList, AlbumsListMsg albumsListMessage ->
         let newAlbumsListModel, newCommand = AlbumsList.update albumsListMessage albumsList
         let model = { model with CurrentPage = AlbumsList newAlbumsListModel }
@@ -191,6 +151,10 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
 
         model, newCommand |> Cmd.map AlbumCreateMsg
     | _, UrlChanged url -> initFromUrl model url
+    | _, ToggleLModal value ->
+        {model with LModalShown = value }, Cmd.none
+    | _, LoginFormChanged form ->
+        { model with LoginForm = form }, Cmd.none
     | _, Login (username, password) ->
         let cmd = Cmd.OfAsync.perform guestApi.login (username, password) ChangedUser
         { model with LoginForm = Form.View.idle { LUsername = ""; LPassword = "" }}, cmd
@@ -200,14 +164,6 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         { model with LModalShown = false }, Cmd.ofMsg OnSessionChange
     | _, Fail ex ->
         model, Cmd.none
-    | _, Logout ->
-
-        model, Cmd.OfFunc.either Session.deleteUser () LoggedOut Fail
-    | _, LoggedOut _ ->
-        { model with CurrentUser = Guest }, Cmd.navigate "albums"
-    | _, Register (username, email, password) ->
-        let cmd = Cmd.OfAsync.perform guestApi.newUser (username, password, email) RegisteredUser
-        { model with RegisterForm = Form.View.idle { Username = ""; Email = ""; Password = "" }}, cmd
     | _, OnSessionChange ->
         let session = Session.loadUser ()
         let user = session |> Option.map User |> Option.defaultValue Guest
@@ -216,17 +172,20 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
             |> Option.map (fun _ -> Cmd.none)
             |> Option.defaultValue (Cmd.navigate "albums")
         { model with CurrentUser = user }, cmd
+    | _, Logout ->
+        model, Cmd.OfFunc.either Session.deleteUser () LoggedOut Fail
+    | _, LoggedOut _ ->
+        { model with CurrentUser = Guest }, Cmd.navigate "albums"
+    | _, ToggleRModal value ->
+        {model with RModalShown = value }, Cmd.none
+    | _, Register (username, email, password) ->
+        let cmd = Cmd.OfAsync.perform guestApi.newUser (username, password, email) RegisteredUser
+        { model with RegisterForm = Form.View.idle { Username = ""; Email = ""; Password = "" }}, cmd
     | _, RegisteredUser user ->
         let cmd = Cmd.OfAsync.perform guestApi.login (user.Username, user.Password) ChangedUser
         model, cmd
-    | _, LoginFormChanged form ->
-        { model with LoginForm = form }, Cmd.none
     | _, RegisterFormChanged form ->
         { model with RegisterForm = form }, Cmd.none
-    | _, ToggleLModal value ->
-        {model with LModalShown = value }, Cmd.none
-    | _, ToggleRModal value ->
-        {model with RModalShown = value }, Cmd.none
     | _, GoBack ->
         model, Cmd.navigateBack 1
     | _, _ -> initFromUrl model (Router.currentUrl ())
@@ -248,9 +207,6 @@ let notAuthorizedView dispatch =
 
 let containerBox model dispatch =
     match model.CurrentPage with
-    // | BestsellersList bestsellersModel -> BestsellersList.view bestsellersModel (BestsellersListMsg >> dispatch)
-    // | GenresList genresModel -> GenresList.view genresModel (GenresListMsg >> dispatch)
-    // | ArtistsList artistsModel -> ArtistsList.view artistsModel (ArtistsListMsg >> dispatch)
     | AlbumsList albumsModel -> AlbumsList.view albumsModel (AlbumsListMsg >> dispatch)
     | AlbumDetails albumsModel -> AlbumDetails.view albumsModel (AlbumDetailsMsg >> dispatch)
     | AlbumEdit albumsModel -> AlbumEdit.view albumsModel (AlbumEditMsg >> dispatch)

@@ -168,44 +168,6 @@ let view (model: Model) (dispatch: Msg -> unit) =
                 prop.onLoad (fun _ -> RequestAlbumDetails model.AlbumId |> dispatch)
             ]
         Bulma.content [
-            // match model.AlbumDetails with
-            // | Some albumDetails ->
-            // //     Bulma.subtitle [
-            // //         text.hasTextCentered
-            // //         prop.text albumDetails.Title
-            // //         color.hasTextDark
-            // //     ]
-            // //     Bulma.columns [
-            // //         Bulma.column [
-            // //             Bulma.label [
-            // //                 prop.text $"Artist : %s{albumDetails.ArtistName}"
-            // //                 color.hasTextDark
-            // //             ]
-            // //             Bulma.label [
-            // //                 prop.text $"Genre : %s{albumDetails.GenreName}"
-            // //                 color.hasTextDark
-            // //             ]
-            // //             Bulma.label [
-            // //                 prop.text $"Price : %.2f{albumDetails.Price}"
-            // //                 color.hasTextDark
-            // //             ]
-            // //         ]
-            // //         Bulma.column [
-            // //             Html.img [
-            // //                 prop.src albumDetails.Thumbnail
-            // //             ]
-            // //         ]
-            // //     ]
-            // //
-            //
-            //
-            // | None ->
-            // Bulma.column[
-            // prop.onLoad (fun _ -> RequestAlbumDetails model.AlbumId |> dispatch)
-            // ]
-
-
-
             Html.br[]
             Html.button [
                 text.hasTextCentered

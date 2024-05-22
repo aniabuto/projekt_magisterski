@@ -132,17 +132,13 @@ let genresListView (genresList : Genre list) (dispatch: Msg -> unit) =
     Bulma.box [
         Bulma.columns [
             Bulma.column [
-                Bulma.label [
-                    prop.text "Genre: "
-                ]
+                Bulma.label [ prop.text "Genre: " ]
             ]
             Bulma.column [
                 Bulma.select [
                     prop.onChange (fun id -> FilterByGenre id |> dispatch )
                     prop.children [
-                        Html.option [
-                                prop.text "All"
-                            ]
+                        Html.option [ prop.text "All" ]
                         for genre in genresList do
                             Html.option [
                                 prop.value genre.Name

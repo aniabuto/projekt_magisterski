@@ -39,8 +39,10 @@ let authorizedApi =
     let db = Db.createContext connectionString
     {
         deleteAlbum = fun album -> Controller.deleteAlbum album db
-        createAlbum = fun (artistId, genreId, price, title, thumbnail) -> Controller.createAlbum (artistId, genreId, price, title, thumbnail) db
-        updateAlbum = fun (albumId, title, price, thumbnail) -> Controller.updateAlbum albumId (title, price, thumbnail) db
+        createAlbum = fun (artistId, genreId, price, title, thumbnail) ->
+            Controller.createAlbum (artistId, genreId, price, title, thumbnail) db
+        updateAlbum = fun (albumId, title, price, thumbnail) ->
+            Controller.updateAlbum albumId (title, price, thumbnail) db
         getCart = fun cartId albumId -> Controller.getCart cartId albumId db
         addToCart = fun cartId albumId -> Controller.addToCart cartId albumId db
         getCartDetails = fun cartId -> Controller.getCartDetails cartId db
