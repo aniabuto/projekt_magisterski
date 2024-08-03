@@ -17,6 +17,8 @@ open Client.Exceptions
 
 type Page =
     | AlbumsList of AlbumsList.Model
+    | ArtistsList of ArtistsList.Model
+    | GenresList of GenresList.Model
     | AlbumDetails of AlbumDetails.Model
     | AlbumEdit of AlbumEdit.Model
     | AlbumCreate of AlbumCreate.Model
@@ -60,6 +62,10 @@ type Msg =
     | AlbumEditMsg of AlbumEdit.Msg
     | AlbumCreateMsg of AlbumCreate.Msg
     | UrlChanged of string list
+    | NavigateBestsellers
+    | NavigateAlbums
+    | NavigateArtists
+    | NavigateGenres
     | ToggleLModal of bool
     | ToggleRModal of bool
     | LoginFormChanged of LoginForm
@@ -82,6 +88,12 @@ let initFromUrl model url =
     | ["albums"] ->
         let albumsListModel, albumsListMsg = AlbumsList.init guestApi
         { model with CurrentPage = AlbumsList albumsListModel}, albumsListMsg |> Cmd.map AlbumsListMsg
+    | ["artists"] ->
+        let artistsListModel, artistsListMsg = ArtistsList.init guestApi
+        { model with CurrentPage = ArtistsList artistsListModel}, artistsListMsg |> Cmd.map ArtistsListMsg
+    | ["genres"] ->
+        let genresListModel, genresListMsg = GenresList.init guestApi
+        { model with CurrentPage = GenresList genresListModel}, genresListMsg |> Cmd.map GenresListMsg
     | ["albums"; Route.Int id] ->
         let albumsListModel, albumsListMsg = AlbumDetails.init id guestApi
         { model with CurrentPage = AlbumDetails albumsListModel}, albumsListMsg |> Cmd.map AlbumDetailsMsg
@@ -123,6 +135,21 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         let model = { model with CurrentPage = AlbumsList newAlbumsListModel }
 
         model, newCommand |> Cmd.map AlbumsListMsg
+    | ArtistsList artistsList, ArtistsListMsg artistsListMessage ->
+        let newArtistsModel, newCommand = ArtistsList.update artistsListMessage artistsList
+        let model = { model with CurrentPage = ArtistsList newArtistsModel }
+
+        model, newCommand |> Cmd.map ArtistsListMsg
+    | GenresList genresList, GenresListMsg genresListMessage ->
+        let newGenresListModel, newCommand = GenresList.update genresListMessage genresList
+        let model = { model with CurrentPage = GenresList newGenresListModel }
+
+        model, newCommand |> Cmd.map GenresListMsg
+    // | BestsellersList bestsellersList, BestsellersListMsg bestsellersListMessage ->
+    //     let newBestsellersListModel, newCommand = BestsellersList.update bestsellersListMessage bestsellersList
+    //     let model = { model with CurrentPage = BestsellersList newBestsellersListModel }
+    //
+    //     model, newCommand |> Cmd.map BestsellersListMsg
     | AlbumDetails albumsList, AlbumDetailsMsg albumsListMessage ->
         let token =
             match model.CurrentUser with
@@ -151,6 +178,14 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
 
         model, newCommand |> Cmd.map AlbumCreateMsg
     | _, UrlChanged url -> initFromUrl model url
+    | _, NavigateBestsellers _ ->
+        model, Cmd.navigate "bestsellers"
+    | _, NavigateAlbums _ ->
+        model, Cmd.navigate "albums"
+    | _, NavigateArtists _ ->
+        model, Cmd.navigate "artists"
+    | _, NavigateGenres _ ->
+        model, Cmd.navigate "genres"
     | _, ToggleLModal value ->
         {model with LModalShown = value }, Cmd.none
     | _, LoginFormChanged form ->
@@ -211,6 +246,9 @@ let containerBox model dispatch =
     | AlbumDetails albumsModel -> AlbumDetails.view albumsModel (AlbumDetailsMsg >> dispatch)
     | AlbumEdit albumsModel -> AlbumEdit.view albumsModel (AlbumEditMsg >> dispatch)
     | AlbumCreate albumsModel -> AlbumCreate.view albumsModel (AlbumCreateMsg >> dispatch)
+    | ArtistsList artistsModel -> ArtistsList.view artistsModel (ArtistsListMsg >> dispatch)
+    | GenresList genresModel -> GenresList.view genresModel (GenresListMsg >> dispatch)
+    // | BestsellersList bestsellersModel -> BestsellersList.view bestsellersModel (BestsellersListMsg >> dispatch)
     | NotFound -> Bulma.box "Page not found"
     | NotAuthorized -> notAuthorizedView dispatch
 
@@ -352,6 +390,24 @@ let view (model: Model) (dispatch: Msg -> unit) =
                             Bulma.title [
                                 text.hasTextCentered
                                 prop.text "SAFE Music Store"
+                            ]
+                            Bulma.container[
+                                Html.button [
+                                    prop.text "Bestsellers"
+                                    prop.onClick (fun _ -> NavigateBestsellers |> dispatch)
+                                ]
+                                Html.button [
+                                    prop.text "Albums"
+                                    prop.onClick (fun _ -> NavigateAlbums |> dispatch)
+                                ]
+                                Html.button [
+                                    prop.text "Genres"
+                                    prop.onClick (fun _ -> NavigateGenres |> dispatch)
+                                ]
+                                Html.button [
+                                    prop.text "Artists"
+                                    prop.onClick (fun _ -> NavigateArtists |> dispatch)
+                                ]
                             ]
                             match model.CurrentUser with
                             | User user ->

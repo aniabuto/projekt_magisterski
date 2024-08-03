@@ -13,7 +13,7 @@ type Msg =
     | GotBestsellers of Bestseller list
     | GetDetails of int
 
-let init () : Model * Cmd<Msg> =
+let init (guestApi: IGuestApi) : Model * Cmd<Msg> =
     let model = { Bestsellers = [] }
 
     let cmd = Cmd.OfAsync.perform guestApi.getBestsellers () GotBestsellers

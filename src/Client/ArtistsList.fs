@@ -11,7 +11,7 @@ type Model = {Artists : Artist list}
 type Msg =
     | GotArtists of Artist list
 
-let init () : Model * Cmd<Msg> =
+let init (guestApi: IGuestApi) : Model * Cmd<Msg> =
     let model = { Artists = [] }
 
     let cmd = Cmd.OfAsync.perform guestApi.getArtists () GotArtists

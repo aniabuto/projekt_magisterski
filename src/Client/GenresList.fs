@@ -11,7 +11,7 @@ type Model = {Genres : Genre list}
 type Msg =
     | GotGenres of Genre list
 
-let init () : Model * Cmd<Msg> =
+let init (guestApi: IGuestApi) : Model * Cmd<Msg> =
     let model = { Genres = [] }
 
     let cmd = Cmd.OfAsync.perform guestApi.getGenres () GotGenres
