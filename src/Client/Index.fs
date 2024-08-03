@@ -47,6 +47,7 @@ type User =
 type Model = {
     CurrentPage : Page
     CurrentUser : User
+    CartModalShown : bool
     LModalShown : bool
     RModalShown : bool
     LoginForm : LoginForm
@@ -66,6 +67,10 @@ type Msg =
     | NavigateAlbums
     | NavigateArtists
     | NavigateGenres
+    | GoToCheckout
+    | ClearCart
+    | GetAlbumDetails of int
+    | ToggleViewCart of bool
     | ToggleLModal of bool
     | ToggleRModal of bool
     | LoginFormChanged of LoginForm
@@ -122,6 +127,7 @@ let init () : Model * Cmd<Msg> =
     |> initFromUrl {
         CurrentPage = AlbumsList model
         CurrentUser = user
+        CartModalShown = false
         LModalShown = false
         RModalShown = false
         LoginForm = Form.View.idle { LUsername = ""; LPassword = "" }
@@ -131,7 +137,11 @@ let init () : Model * Cmd<Msg> =
 let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
     match model.CurrentPage, message with
     | AlbumsList albumsList, AlbumsListMsg albumsListMessage ->
-        let newAlbumsListModel, newCommand = AlbumsList.update albumsListMessage albumsList
+        let token =
+            match model.CurrentUser with
+            | User data -> data.Token
+            | Guest -> ""
+        let newAlbumsListModel, newCommand = AlbumsList.update (authorizedApi token) albumsListMessage albumsList
         let model = { model with CurrentPage = AlbumsList newAlbumsListModel }
 
         model, newCommand |> Cmd.map AlbumsListMsg
@@ -186,6 +196,8 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         model, Cmd.navigate "artists"
     | _, NavigateGenres _ ->
         model, Cmd.navigate "genres"
+    | _, ToggleViewCart value ->
+        {model with CartModalShown = value }, Cmd.none
     | _, ToggleLModal value ->
         {model with LModalShown = value }, Cmd.none
     | _, LoginFormChanged form ->
@@ -372,6 +384,92 @@ let registerForm _ : Form.Form<RegisterValues, Msg, _> =
         |> Form.append emailField
         |> Form.append passwordField
 
+let emptyCart (dispatch: Msg -> unit) =
+    Bulma.modalCard [
+        Bulma.modalCardHead [
+            Bulma.modalCardTitle "My Cart"
+            Bulma.delete [
+                prop.ariaLabel "close"
+                prop.onClick (fun _ -> ToggleViewCart false |> dispatch)
+            ]
+        ]
+        Bulma.modalCardBody [
+            Bulma.subtitle [
+                Bulma.color.hasTextBlack
+                prop.text "Cart is empty"
+            ]
+        ]
+        Bulma.modalCardFoot []
+    ]
+
+let nonEmptyCart (carts : CartDetails list) (dispatch: Msg -> unit) =
+    Bulma.modalCard [
+        Bulma.modalCardHead [
+            Bulma.modalCardTitle "My Cart"
+            Bulma.delete [
+                prop.ariaLabel "close"
+                prop.onClick (fun _ -> ToggleViewCart false |> dispatch)
+            ]
+        ]
+        Bulma.modalCardBody [
+            Bulma.table [
+                yield Html.tr [
+                    for h in ["Album Name"; "Price (each)"; "Quantity"; ""] ->
+                        Html.th [
+                            prop.text h
+                        ]
+                ]
+                for cart in carts ->
+                    Html.tr [
+                        Html.td [
+                            Html.a [
+                                prop.text cart.AlbumTitle
+                                prop.onClick (fun _ -> GetAlbumDetails cart.AlbumId |> dispatch)
+                            ]
+                        ]
+                        Html.td [
+                            prop.text (string $"%.2f{cart.Price}")
+                        ]
+                        Html.td [
+                            prop.text (string $"{cart.Count}")
+                        ]
+                    ]
+            ]
+        ]
+        Bulma.modalCardFoot [
+            Bulma.container [
+                Bulma.block [
+                    Bulma.label "Total price:"
+                    yield Bulma.input.text [
+                        let total =
+                            carts
+                            |> List.sumBy (fun c -> c.Price * (decimal c.Count))
+                        prop.value (string $"{total}") // TODO: adjust price to cart contents
+                        prop.readOnly true
+                    ]
+                ]
+
+                Bulma.buttons [
+                    Bulma.button.button [
+                        Bulma.color.isSuccess
+                        prop.text "Checkout"
+                        prop.onClick (fun _ -> dispatch GoToCheckout)
+                    ]
+                    Bulma.button.button [
+                        prop.text "Clear"
+                        prop.onClick (fun _ -> dispatch ClearCart)
+                    ]
+                ]
+            ]
+        ]
+    ]
+
+
+let cart (dispatch: Msg -> unit) = function
+    | [] -> emptyCart dispatch
+    | list -> nonEmptyCart list dispatch
+
+
 let view (model: Model) (dispatch: Msg -> unit) =
     React.router [
         router.onUrlChanged (UrlChanged >> dispatch)
@@ -391,89 +489,104 @@ let view (model: Model) (dispatch: Msg -> unit) =
                                 text.hasTextCentered
                                 prop.text "SAFE Music Store"
                             ]
-                            Bulma.container[
-                                Html.button [
+                            Bulma.box [
+                                Bulma.button.button [
                                     prop.text "Bestsellers"
                                     prop.onClick (fun _ -> NavigateBestsellers |> dispatch)
                                 ]
-                                Html.button [
+                                Bulma.button.button [
                                     prop.text "Albums"
                                     prop.onClick (fun _ -> NavigateAlbums |> dispatch)
                                 ]
-                                Html.button [
+                                Bulma.button.button [
                                     prop.text "Genres"
                                     prop.onClick (fun _ -> NavigateGenres |> dispatch)
                                 ]
-                                Html.button [
+                                Bulma.button.button [
                                     prop.text "Artists"
                                     prop.onClick (fun _ -> NavigateArtists |> dispatch)
                                 ]
+                                Bulma.button.button [
+                                    prop.text "Cart"
+                                    prop.onClick (fun _ -> ToggleViewCart true |> dispatch)
+                                ]
                             ]
-                            match model.CurrentUser with
-                            | User user ->
-                                Bulma.subtitle [
-                                    text.hasTextCentered
-                                    prop.text user.UserName.Value
-                                ]
-                                Html.button [
-                                    prop.text "Log Out"
-                                    prop.onClick (fun _ -> Logout |> dispatch)
-                                ]
-                            | Guest ->
-                                Bulma.button.button [
-                                    prop.ariaHasPopup true
-                                    prop.target "modal-login"
-                                    prop.text "Log in"
-                                    prop.onClick (fun _ -> ToggleLModal true |> dispatch)
-                                ]
-                                Bulma.modal [
-                                    if model.LModalShown then Bulma.modal.isActive
-                                    prop.id "modal-login"
-                                    prop.children [
-                                        Bulma.modalBackground []
-                                        Bulma.modalContent [
-                                            Form.View.asHtml
-                                                {
-                                                    Dispatch = dispatch
-                                                    OnChange = LoginFormChanged
-                                                    Action = Form.View.Action.SubmitOnly "Log In"
-                                                    Validation = Form.View.ValidateOnSubmit
-                                                }
-                                                (loginForm ())
-                                                model.LoginForm
-                                        ]
-                                        Bulma.modalClose [
-                                            prop.onClick (fun _ -> ToggleLModal false |> dispatch)
+                            Bulma.box [
+                                match model.CurrentUser with
+                                | User user ->
+                                    Bulma.subtitle [
+                                        text.hasTextCentered
+                                        prop.text user.UserName.Value
+                                    ]
+                                    Bulma.button.button [
+                                        prop.text "Log Out"
+                                        prop.onClick (fun _ -> Logout |> dispatch)
+                                    ]
+                                | Guest ->
+                                    Bulma.button.button [
+                                        prop.ariaHasPopup true
+                                        prop.target "modal-login"
+                                        prop.text "Log in"
+                                        prop.onClick (fun _ -> ToggleLModal true |> dispatch)
+                                    ]
+                                    Bulma.modal [
+                                        if model.LModalShown then Bulma.modal.isActive
+                                        prop.id "modal-login"
+                                        prop.children [
+                                            Bulma.modalBackground []
+                                            Bulma.modalContent [
+                                                Form.View.asHtml
+                                                    {
+                                                        Dispatch = dispatch
+                                                        OnChange = LoginFormChanged
+                                                        Action = Form.View.Action.SubmitOnly "Log In"
+                                                        Validation = Form.View.ValidateOnSubmit
+                                                    }
+                                                    (loginForm ())
+                                                    model.LoginForm
+                                            ]
+                                            Bulma.modalClose [
+                                                prop.onClick (fun _ -> ToggleLModal false |> dispatch)
+                                            ]
                                         ]
                                     ]
-                                ]
-                                Bulma.button.button [
-                                    prop.ariaHasPopup true
-                                    prop.target "modal-register"
-                                    prop.text "Register"
-                                    prop.onClick (fun _ -> ToggleRModal true |> dispatch)
-                                ]
-                                Bulma.modal [
-                                    if model.RModalShown then Bulma.modal.isActive
-                                    prop.id "modal-register"
-                                    prop.children [
-                                        Bulma.modalBackground []
-                                        Bulma.modalContent [
-                                            Form.View.asHtml
-                                                {
-                                                    Dispatch = dispatch
-                                                    OnChange = RegisterFormChanged
-                                                    Action = Form.View.Action.SubmitOnly "Register"
-                                                    Validation = Form.View.ValidateOnSubmit
-                                                }
-                                                (registerForm ())
-                                                model.RegisterForm
-                                        ]
-                                        Bulma.modalClose [
-                                            prop.onClick (fun _ -> ToggleRModal false |> dispatch)
+                                    Bulma.button.button [
+                                        prop.ariaHasPopup true
+                                        prop.target "modal-register"
+                                        prop.text "Register"
+                                        prop.onClick (fun _ -> ToggleRModal true |> dispatch)
+                                    ]
+                                    Bulma.modal [
+                                        if model.RModalShown then Bulma.modal.isActive
+                                        prop.id "modal-register"
+                                        prop.children [
+                                            Bulma.modalBackground []
+                                            Bulma.modalContent [
+                                                Form.View.asHtml
+                                                    {
+                                                        Dispatch = dispatch
+                                                        OnChange = RegisterFormChanged
+                                                        Action = Form.View.Action.SubmitOnly "Register"
+                                                        Validation = Form.View.ValidateOnSubmit
+                                                    }
+                                                    (registerForm ())
+                                                    model.RegisterForm
+                                            ]
+                                            Bulma.modalClose [
+                                                prop.onClick (fun _ -> ToggleRModal false |> dispatch)
+                                            ]
                                         ]
                                     ]
+                            ]
+
+                            Bulma.modal [
+                                if model.CartModalShown then Bulma.modal.isActive
+                                prop.id "modal-cart"
+                                prop.children [
+                                    Bulma.modalBackground []
+                                    cart dispatch []
                                 ]
+                            ]
                             containerBox model dispatch
                         ]
                     ]

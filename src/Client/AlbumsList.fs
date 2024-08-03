@@ -20,6 +20,7 @@ type Msg =
     | FilterByGenre of string
     | GotAlbumsByGenre of Album list
     | GetDetails of int
+    | AddToCart of int
     | AddAlbum
 
 
@@ -37,7 +38,7 @@ let init (guestApi: IGuestApi) : Model * Cmd<Msg> =
 
     model, cmd
 
-let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let update (authorizedApi : IAuthorizedApi) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
      | GotAlbumsDetails albums ->
          { model with AlbumsDetails =   albums }, Cmd.none
@@ -53,6 +54,8 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
          { model with Albums = albums }, Cmd.none
      | GetDetails id ->
          model, Cmd.navigate ("albums", id)
+     | AddToCart id ->
+         model, Cmd.OfAsync.perform authorizedApi.addToCart
      | AddAlbum ->
          model, Cmd.navigate ("albums", "create")
 
@@ -99,6 +102,9 @@ let albumsHeadRowView =
                 Html.th [
                     prop.text ""
                 ]
+                Html.th [
+                    prop.text ""
+                ]
             ]
         ]
     ]
@@ -122,6 +128,12 @@ let albumsRowView (album : AlbumDetails) (dispatch: Msg -> unit) =
                 Html.button [
                     prop.text "Details"
                     prop.onClick (fun _ -> GetDetails album.AlbumId |> dispatch)
+                ]
+            ]
+            Html.td [
+                Html.button [
+                    prop.text "Add To Cart"
+                    prop.onClick (fun _ -> AddToCart album.AlbumId |> dispatch)
                 ]
             ]
         ]
