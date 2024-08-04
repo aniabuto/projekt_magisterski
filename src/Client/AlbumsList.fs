@@ -1,5 +1,6 @@
 module Client.AlbumsList
 
+open System
 open Fable.Remoting.Client
 open Shared
 open Shared.Types
@@ -21,6 +22,7 @@ type Msg =
     | GotAlbumsByGenre of Album list
     | GetDetails of int
     | AddToCart of int
+    | AddedToCart of unit
     | AddAlbum
 
 
@@ -55,7 +57,14 @@ let update (authorizedApi : IAuthorizedApi) (msg: Msg) (model: Model) : Model * 
      | GetDetails id ->
          model, Cmd.navigate ("albums", id)
      | AddToCart id ->
-         model, Cmd.OfAsync.perform authorizedApi.addToCart
+         let cart = Session.loadCart ()
+         match cart with
+         | Some cartId -> model, Cmd.OfAsync.perform authorizedApi.addToCart (cartId, id) AddedToCart
+         | None ->
+             let guid = "%s{Guid.NewGuid ()}"
+             Session.saveCart guid
+             model, Cmd.OfAsync.perform authorizedApi.addToCart (guid, id) AddedToCart
+
      | AddAlbum ->
          model, Cmd.navigate ("albums", "create")
 

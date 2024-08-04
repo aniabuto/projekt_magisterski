@@ -47,6 +47,7 @@ type User =
 type Model = {
     CurrentPage : Page
     CurrentUser : User
+    CurrentCartId : string
     CartModalShown : bool
     LModalShown : bool
     RModalShown : bool
@@ -127,6 +128,7 @@ let init () : Model * Cmd<Msg> =
     |> initFromUrl {
         CurrentPage = AlbumsList model
         CurrentUser = user
+        CurrentCartId = ""
         CartModalShown = false
         LModalShown = false
         RModalShown = false

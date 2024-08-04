@@ -9,6 +9,9 @@
         <None Include="index.html" />
         <None Include="paket.references" />
         <Compile Include="Apis.fs" />
+        <Compile Include="LocalStorage.fs" />
+        <Compile Include="Session.fs" />
+        <Compile Include="Exceptions.fs" />
         <Compile Include="BestsellersList.fs" />
         <Compile Include="GenresList.fs" />
         <Compile Include="ArtistsList.fs" />
@@ -16,9 +19,6 @@
         <Compile Include="AlbumDetails.fs" />
         <Compile Include="AlbumEdit.fs" />
         <Compile Include="AlbumCreate.fs" />
-        <Compile Include="LocalStorage.fs" />
-        <Compile Include="Session.fs" />
-        <Compile Include="Exceptions.fs" />
         <Compile Include="Index.fs" />
         <Compile Include="App.fs" />
         <Content Include="Info.md" />
