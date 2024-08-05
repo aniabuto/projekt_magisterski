@@ -33,6 +33,12 @@ let guestApi =
         getUser = fun username -> Controller.getUser username db
         newUser = fun (username, password, email) -> Controller.newUser (username, password, email) db
         login = fun (username, password) -> Controller.login (username, password) db
+        getCart = fun (cartId, albumId) -> Controller.getCart cartId albumId db
+        addToCart = fun (cartId, albumId) -> Controller.addToCart cartId albumId db
+        getCartDetails = fun cartId -> Controller.getCartDetails cartId db
+        removeFromCart = fun cart -> Controller.removeFromCart cart db
+        getCarts = fun cartId -> Controller.getCarts cartId db
+        updateCarts = fun (cartId, username) -> Controller.updateCarts (cartId, username) db
     }
 
 let authorizedApi =
@@ -43,11 +49,5 @@ let authorizedApi =
             Controller.createAlbum (artistId, genreId, price, title, thumbnail) db
         updateAlbum = fun (albumId, title, price, thumbnail) ->
             Controller.updateAlbum albumId (title, price, thumbnail) db
-        getCart = fun cartId albumId -> Controller.getCart cartId albumId db
-        addToCart = fun cartId albumId -> Controller.addToCart cartId albumId db
-        getCartDetails = fun cartId -> Controller.getCartDetails cartId db
-        removeFromCart = fun cart -> Controller.removeFromCart cart db
-        getCarts = fun cartId -> Controller.getCarts cartId db
-        updateCarts = fun (cartId, username) -> Controller.updateCarts (cartId, username) db
         placeOrder = fun username -> Controller.placeOrder username db
     }

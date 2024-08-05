@@ -13,6 +13,7 @@ type Model = {
     Albums : Album list
     AlbumsDetails : AlbumDetails list
     Genres : Genre list
+    CartId : string
 }
 
 type Msg =
@@ -31,6 +32,7 @@ let init (guestApi: IGuestApi) : Model * Cmd<Msg> =
         Albums = []
         AlbumsDetails = []
         Genres = []
+        CartId = ""
     }
 
     let cmd = Cmd.batch [
@@ -40,7 +42,7 @@ let init (guestApi: IGuestApi) : Model * Cmd<Msg> =
 
     model, cmd
 
-let update (authorizedApi : IAuthorizedApi) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
      | GotAlbumsDetails albums ->
          { model with AlbumsDetails =   albums }, Cmd.none
@@ -59,12 +61,12 @@ let update (authorizedApi : IAuthorizedApi) (msg: Msg) (model: Model) : Model * 
      | AddToCart id ->
          let cart = Session.loadCart ()
          match cart with
-         | Some cartId -> model, Cmd.OfAsync.perform authorizedApi.addToCart (cartId, id) AddedToCart
+         | Some cartId -> { model with CartId = cartId }, Cmd.OfAsync.perform guestApi.addToCart (cartId, id) AddedToCart
          | None ->
              let guid = "%s{Guid.NewGuid ()}"
              Session.saveCart guid
-             model, Cmd.OfAsync.perform authorizedApi.addToCart (guid, id) AddedToCart
-
+             { model with CartId = guid }, Cmd.OfAsync.perform guestApi.addToCart (guid, id) AddedToCart
+     | AddedToCart _ -> model, Cmd.none
      | AddAlbum ->
          model, Cmd.navigate ("albums", "create")
 

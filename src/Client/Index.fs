@@ -48,6 +48,7 @@ type Model = {
     CurrentPage : Page
     CurrentUser : User
     CurrentCartId : string
+    CartItems : CartDetails list
     CartModalShown : bool
     LModalShown : bool
     RModalShown : bool
@@ -70,6 +71,7 @@ type Msg =
     | NavigateGenres
     | GoToCheckout
     | ClearCart
+    | GotCartDetails of CartDetails list
     | GetAlbumDetails of int
     | ToggleViewCart of bool
     | ToggleLModal of bool
@@ -129,6 +131,7 @@ let init () : Model * Cmd<Msg> =
         CurrentPage = AlbumsList model
         CurrentUser = user
         CurrentCartId = ""
+        CartItems = []
         CartModalShown = false
         LModalShown = false
         RModalShown = false
@@ -139,14 +142,10 @@ let init () : Model * Cmd<Msg> =
 let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
     match model.CurrentPage, message with
     | AlbumsList albumsList, AlbumsListMsg albumsListMessage ->
-        let token =
-            match model.CurrentUser with
-            | User data -> data.Token
-            | Guest -> ""
-        let newAlbumsListModel, newCommand = AlbumsList.update (authorizedApi token) albumsListMessage albumsList
-        let model = { model with CurrentPage = AlbumsList newAlbumsListModel }
-
+        let newAlbumsListModel, newCommand = AlbumsList.update albumsListMessage albumsList
+        let model = { model with CurrentPage = AlbumsList newAlbumsListModel; CurrentCartId = newAlbumsListModel.CartId }
         model, newCommand |> Cmd.map AlbumsListMsg
+
     | ArtistsList artistsList, ArtistsListMsg artistsListMessage ->
         let newArtistsModel, newCommand = ArtistsList.update artistsListMessage artistsList
         let model = { model with CurrentPage = ArtistsList newArtistsModel }
@@ -199,7 +198,19 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
     | _, NavigateGenres _ ->
         model, Cmd.navigate "genres"
     | _, ToggleViewCart value ->
-        {model with CartModalShown = value }, Cmd.none
+        let cartId =
+            match model.CurrentUser with
+            | User user -> user.UserName.Value
+            | Guest _ -> model.CurrentCartId
+        match value with
+        | false ->
+            {model with CartModalShown = value }, Cmd.none
+        | true ->
+            model, Cmd.OfAsync.perform guestApi.getCartDetails cartId GotCartDetails
+    | _, GotCartDetails cartDetails ->
+        { model with
+            CartItems =  cartDetails
+            CartModalShown = true }, Cmd.none
     | _, ToggleLModal value ->
         {model with LModalShown = value }, Cmd.none
     | _, LoginFormChanged form ->
@@ -586,7 +597,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
                                 prop.id "modal-cart"
                                 prop.children [
                                     Bulma.modalBackground []
-                                    cart dispatch []
+                                    cart dispatch model.CartItems
                                 ]
                             ]
                             containerBox model dispatch

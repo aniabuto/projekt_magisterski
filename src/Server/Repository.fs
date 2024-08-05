@@ -168,13 +168,21 @@ let getCart cartId albumId (ctx : DB.dataContext) =
 
 let addToCart cartId albumId (ctx : DB.dataContext) =
     async {
-        let! maybeCart = getCart cartId albumId ctx
-        match maybeCart with
+        // let! maybeCart = getCart cartId albumId ctx
+        let foundCart =
+            query {
+                for cart in ctx.Public.Carts do
+                    where (cart.CartId = cartId && cart.AlbumId = albumId)
+                    select cart
+            }|> Seq.tryHead
+        match foundCart with
         | Some cart ->
-            cart.Count <- cart.Count + 1
+            let newCount = cart.Count + 1
+            cart.Count <- newCount
+            ctx.SubmitUpdates()
         | None ->
             ctx.Public.Carts.Create(albumId, cartId, 1, System.DateTime.UtcNow) |> ignore
-        ctx.SubmitUpdates()
+            ctx.SubmitUpdates()
     }
 
 let getCartDetails cartId (ctx : DB.dataContext) =
