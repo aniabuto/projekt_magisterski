@@ -36,7 +36,7 @@ let guestApi =
         getCart = fun (cartId, albumId) -> Controller.getCart cartId albumId db
         addToCart = fun (cartId, albumId) -> Controller.addToCart cartId albumId db
         getCartDetails = fun cartId -> Controller.getCartDetails cartId db
-        removeFromCart = fun cart -> Controller.removeFromCart cart db
+        removeFromCart = fun (cartId, albumId) -> Controller.removeFromCart cartId albumId db
         getCarts = fun cartId -> Controller.getCarts cartId db
         updateCarts = fun (cartId, username) -> Controller.updateCarts (cartId, username) db
     }
@@ -44,10 +44,15 @@ let guestApi =
 let authorizedApi =
     let db = Db.createContext connectionString
     {
+        placeOrder = fun username -> Controller.placeOrder username db
+    }
+
+let adminApi =
+    let db = Db.createContext connectionString
+    {
         deleteAlbum = fun album -> Controller.deleteAlbum album db
         createAlbum = fun (artistId, genreId, price, title, thumbnail) ->
             Controller.createAlbum (artistId, genreId, price, title, thumbnail) db
         updateAlbum = fun (albumId, title, price, thumbnail) ->
             Controller.updateAlbum albumId (title, price, thumbnail) db
-        placeOrder = fun username -> Controller.placeOrder username db
     }

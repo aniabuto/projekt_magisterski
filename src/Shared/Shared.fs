@@ -24,15 +24,19 @@ type IGuestApi =
         getCart : string * int -> Async<Cart option>
         addToCart : string * int -> Async<unit>
         getCartDetails : string -> Async<CartDetails list>
-        removeFromCart : Cart -> Async<unit>
+        removeFromCart : string * int -> Async<unit>
         getCarts : string -> Async<Cart list>
         updateCarts : string * string -> Async<unit>
     }
 
 type IAuthorizedApi =
     {
+        placeOrder : string -> Async<unit>
+    }
+
+type IAdminApi =
+    {
         deleteAlbum : int -> Async<unit>
         createAlbum : int * int * decimal * string * string -> Async<int>
         updateAlbum : int * string * decimal * string -> Async<unit>
-        placeOrder : string -> Async<unit>
     }

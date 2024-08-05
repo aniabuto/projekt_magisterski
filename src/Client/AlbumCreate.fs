@@ -40,7 +40,7 @@ type Msg =
     | GoBack
 
 
-let init (authorizedApi: IAuthorizedApi) (userName : UserName) : Model * Cmd<Msg> =
+let init (authorizedApi: IAdminApi) (userName : UserName) : Model * Cmd<Msg> =
     let model = {
         Form = Form.View.idle { Title = ""; Thumbnail = placeholderString; Price = string(Decimal.Zero); Artist = "0"; Genre = "0" }
         Artists = []
@@ -54,7 +54,7 @@ let init (authorizedApi: IAuthorizedApi) (userName : UserName) : Model * Cmd<Msg
 
     model, cmd
 
-let update (authorizedApi: IAuthorizedApi) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let update (authorizedApi: IAdminApi) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
      | GotArtists artists ->
          { model with Artists =  artists }, Cmd.none

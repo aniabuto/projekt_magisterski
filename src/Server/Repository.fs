@@ -87,10 +87,10 @@ let deleteAlbum (id : int) (ctx : DB.dataContext) =
         | None -> ()
     }
 
-let deleteCart (cart : Cart) (ctx : DB.dataContext) =
+let deleteCart (cartId : string) (albumId : int) (ctx : DB.dataContext) =
     let foundCart = query {
         for c in ctx.Public.Carts do
-        where (c.CartId = cart.CartId)
+        where (c.CartId = cartId && c.AlbumId = albumId)
         select (Some c)
         exactlyOneOrDefault
     }
@@ -193,12 +193,23 @@ let getCartDetails cartId (ctx : DB.dataContext) =
     }
     |> List.executeQueryAsync
 
-let removeFromCart (cart : Cart) (ctx : DB.dataContext) =
+let removeFromCart (cartId : string) (albumId : int) (ctx : DB.dataContext) =
     async {
-        cart.Count <- cart.Count - 1
-        if cart.Count = 0 then
-            deleteCart cart ctx
-        ctx.SubmitUpdates()
+        let foundCart =
+            query {
+                for cartE in ctx.Public.Carts do
+                    where (cartE.CartId = cartId && cartE.AlbumId = albumId)
+                    select cartE
+            }|> Seq.tryHead
+        match foundCart with
+        | Some cart ->
+            let newCount = cart.Count - 1
+            cart.Count <- newCount
+            if cart.Count = 0 then
+                deleteCart cart.CartId cart.AlbumId ctx
+            ctx.SubmitUpdates()
+        | None -> ()
+
     }
 
 let getCarts cartId (ctx : DB.dataContext) =
@@ -212,13 +223,25 @@ let getCarts cartId (ctx : DB.dataContext) =
 
 let upgradeCarts (cartId : string, username :string) (ctx : DB.dataContext) =
     async {
-        let! maybeCarts = getCarts cartId ctx
-        for cart in maybeCarts do
-            let! maybeCart = getCart username cart.AlbumId ctx
-            match maybeCart with
+        // let! maybeCarts = getCarts cartId ctx
+        let foundCarts =
+            query {
+                for cart in ctx.Public.Carts do
+                    where (cart.CartId = cartId)
+                    select (cart |> cartEntityToType)
+            }
+        for cart in foundCarts do
+            // let! maybeCart = getCart username cart.AlbumId ctx
+            let foundCart =
+                query {
+                    for cart_ in ctx.Public.Carts do
+                        where (cart_.CartId = username && cart_.AlbumId = cart_.AlbumId)
+                        select cart_
+                }|> Seq.tryHead
+            match foundCart with
             | Some existing ->
                 existing.Count <- existing.Count + cart.Count
-                deleteCart cart ctx
+                deleteCart cart.CartId cart.AlbumId ctx
             | None ->
                 cart.CartId <- username
         ctx.SubmitUpdates()
@@ -255,6 +278,6 @@ let placeOrder (username : string) (ctx : DB.dataContext) =
                 cart.Count,
                 cart.Price) |> ignore
             let! maybeCart = getCart cart.CartId cart.AlbumId ctx
-            maybeCart |> Option.iter (fun c -> deleteCart c ctx)
+            maybeCart |> Option.iter (fun c -> deleteCart c.CartId c.AlbumId ctx)
         ctx.SubmitUpdates()
     }

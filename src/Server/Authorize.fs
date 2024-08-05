@@ -29,16 +29,23 @@ let secret =
 
 let issuer = "safe_music_store.io"
 
-let generateToken username =
+let generateToken username role =
     [
         Claim(JwtRegisteredClaimNames.Sub, username)
         Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", role)
     ]
     |> Saturn.Auth.generateJWT (secret, algorithm) issuer (DateTime.UtcNow.AddHours(1.0))
 
+let getRole username =
+    match username with
+        | "admin" -> "Admin"
+        | _ -> "User"
+
 let createUserData (login: Login) : UserData = {
     UserName = UserName login.UserName
-    Token = generateToken login.UserName
+    Token = generateToken login.UserName (login.UserName |> getRole)
+    Role = login.UserName |> getRole
 }
 
 let login (login: Login) =

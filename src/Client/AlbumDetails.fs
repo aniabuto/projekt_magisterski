@@ -22,6 +22,7 @@ type Msg =
     | CancelDeletion
     | DeleteAlbum of int
     | AlbumDeleted of unit
+    | FailedToDelete of exn
     | GoBack
 
 
@@ -38,7 +39,7 @@ let init id (guestApi: IGuestApi) : Model * Cmd<Msg> =
 
     model, cmd
 
-let update (authorizedApi : IAuthorizedApi) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let update (authorizedApi : IAdminApi) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
      | GotAlbumDetails albums ->
          { model with AlbumDetails =   albums }, Cmd.none
@@ -49,7 +50,7 @@ let update (authorizedApi : IAuthorizedApi) (msg: Msg) (model: Model) : Model * 
      | CancelDeletion ->
          { model with DeletionConfirmation = false }, Cmd.none
      | DeleteAlbum id ->
-         model, Cmd.OfAsyncImmediate.perform authorizedApi.deleteAlbum id AlbumDeleted
+         model, Cmd.OfAsyncImmediate.either authorizedApi.deleteAlbum id AlbumDeleted FailedToDelete
      | AlbumDeleted () ->
          model, Cmd.navigateBack 1
      | GoBack ->
@@ -162,19 +163,24 @@ let view (model: Model) (dispatch: Msg -> unit) =
                 prop.onClick (fun _ -> dispatch GoBack)
                 color.hasTextDark
             ]
-            Html.button [
-                text.hasTextCentered
-                prop.style [style.marginLeft 10]
-                prop.text "Edit"
-                prop.onClick (fun _ -> EditAlbum model.AlbumId |> dispatch)
-                color.hasTextDark
-            ]
-            Html.button [
-                text.hasTextCentered
-                prop.style [style.marginLeft 10]
-                prop.text "Delete"
-                prop.onClick (fun _ -> DeleteAlbumWarning model.AlbumId |> dispatch)
-                color.hasTextDark
-            ]
+            match Session.loadUser () |> Option.map UserClient.User |> Option.defaultValue UserClient.Guest with
+            | User u when u.Role = "Admin" ->
+                Html.div [
+                    Html.button [
+                        text.hasTextCentered
+                        prop.style [style.marginLeft 10]
+                        prop.text "Edit"
+                        prop.onClick (fun _ -> EditAlbum model.AlbumId |> dispatch)
+                        color.hasTextDark
+                    ]
+                    Html.button [
+                        text.hasTextCentered
+                        prop.style [style.marginLeft 10]
+                        prop.text "Delete"
+                        prop.onClick (fun _ -> DeleteAlbumWarning model.AlbumId |> dispatch)
+                        color.hasTextDark
+                    ]
+                ]
+            | _ -> Html.none
         ]
     ]

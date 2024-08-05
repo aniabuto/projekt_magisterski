@@ -40,13 +40,11 @@ type RegisterValues = {
 
 type RegisterForm = Form.View.Model<RegisterValues>
 
-type User =
-    | Guest
-    | User of UserData
+
 
 type Model = {
     CurrentPage : Page
-    CurrentUser : User
+    CurrentUser : UserClient
     CurrentCartId : string
     CartItems : CartDetails list
     CartModalShown : bool
@@ -71,6 +69,8 @@ type Msg =
     | NavigateGenres
     | GoToCheckout
     | ClearCart
+    | RefreshCart of unit
+    | RemoveFromCart of int
     | GotCartDetails of CartDetails list
     | GetAlbumDetails of int
     | ToggleViewCart of bool
@@ -108,13 +108,17 @@ let initFromUrl model url =
     | ["albums"; Route.Int id; "edit"] ->
         match model.CurrentUser with
         | User u ->
-            let albumsListModel, albumsListMsg = AlbumEdit.init id (authorizedApi u.Token) u.UserName
-            { model with CurrentPage = AlbumEdit albumsListModel}, albumsListMsg |> Cmd.map AlbumEditMsg
+            match u.Role with
+            | "Admin" ->
+                let albumsListModel, albumsListMsg = AlbumEdit.init id (adminApi u.Token) u.UserName
+                { model with CurrentPage = AlbumEdit albumsListModel}, albumsListMsg |> Cmd.map AlbumEditMsg
+            | _ ->
+                { model with CurrentPage = NotAuthorized }, Cmd.none
         | Guest -> { model with CurrentPage = NotAuthorized }, Cmd.none
     | ["albums"; "create"] ->
         match model.CurrentUser with
         | User u ->
-            let albumsListModel, albumsListMsg = AlbumCreate.init (authorizedApi u.Token) u.UserName
+            let albumsListModel, albumsListMsg = AlbumCreate.init (adminApi u.Token) u.UserName
             { model with CurrentPage = AlbumCreate albumsListModel}, albumsListMsg |> Cmd.map AlbumCreateMsg
         | Guest -> { model with CurrentPage = NotAuthorized }, Cmd.none
     | _ -> model, Cmd.none
@@ -166,7 +170,7 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
             match model.CurrentUser with
             | User data -> data.Token
             | Guest -> ""
-        let newAlbumsListModel, newCommand = AlbumDetails.update (authorizedApi token) albumsListMessage albumsList
+        let newAlbumsListModel, newCommand = AlbumDetails.update (adminApi token) albumsListMessage albumsList
         let model = { model with CurrentPage = AlbumDetails newAlbumsListModel }
 
         model, newCommand |> Cmd.map AlbumDetailsMsg
@@ -175,7 +179,7 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
             match model.CurrentUser with
             | User data -> data.Token
             | Guest -> ""
-        let newAlbumsListModel, newCommand = AlbumEdit.update (authorizedApi token) albumsListMessage albumsList
+        let newAlbumsListModel, newCommand = AlbumEdit.update (adminApi token) albumsListMessage albumsList
         let model = { model with CurrentPage = AlbumEdit newAlbumsListModel }
 
         model, newCommand |> Cmd.map AlbumEditMsg
@@ -184,7 +188,7 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
             match model.CurrentUser with
             | User data -> data.Token
             | Guest -> ""
-        let newAlbumsListModel, newCommand = AlbumCreate.update (authorizedApi token) albumsListMessage albumsList
+        let newAlbumsListModel, newCommand = AlbumCreate.update (adminApi token) albumsListMessage albumsList
         let model = { model with CurrentPage = AlbumCreate newAlbumsListModel }
 
         model, newCommand |> Cmd.map AlbumCreateMsg
@@ -211,6 +215,20 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         { model with
             CartItems =  cartDetails
             CartModalShown = true }, Cmd.none
+    | _, ClearCart ->
+        model, Cmd.none
+    | _, RefreshCart _ ->
+        let cartId =
+            match model.CurrentUser with
+            | User user -> user.UserName.Value
+            | Guest _ -> model.CurrentCartId
+        model, Cmd.OfAsync.perform guestApi.getCartDetails cartId GotCartDetails
+    | _, RemoveFromCart id ->
+        let cartId =
+            match model.CurrentUser with
+            | User user -> user.UserName.Value
+            | Guest _ -> model.CurrentCartId
+        model, Cmd.OfAsync.perform guestApi.removeFromCart (cartId, id) RefreshCart
     | _, ToggleLModal value ->
         {model with LModalShown = value }, Cmd.none
     | _, LoginFormChanged form ->
@@ -444,7 +462,16 @@ let nonEmptyCart (carts : CartDetails list) (dispatch: Msg -> unit) =
                             prop.text (string $"%.2f{cart.Price}")
                         ]
                         Html.td [
+                            // Bulma.input.number [
+                            //     prop.
+                            // ]
                             prop.text (string $"{cart.Count}")
+                        ]
+                        Html.td [
+                            Html.button [
+                                prop.text "Remove"
+                                prop.onClick (fun _ -> RemoveFromCart cart.AlbumId |> dispatch)
+                            ]
                         ]
                     ]
             ]
@@ -530,6 +557,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
                                     Bulma.subtitle [
                                         text.hasTextCentered
                                         prop.text user.UserName.Value
+                                        Bulma.color.hasTextBlack
                                     ]
                                     Bulma.button.button [
                                         prop.text "Log Out"

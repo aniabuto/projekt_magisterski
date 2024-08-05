@@ -104,4 +104,8 @@ type UserName =
         match this with
         | UserName v -> v
 
-type UserData = { UserName: UserName; Token: JWT }
+type UserData = { UserName: UserName; Token: JWT; Role: string }
+
+type UserClient =
+    | Guest
+    | User of UserData

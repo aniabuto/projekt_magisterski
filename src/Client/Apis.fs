@@ -14,3 +14,10 @@ let authorizedApi token =
     |> Remoting.withAuthorizationHeader bearer
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.buildProxy<IAuthorizedApi>
+
+let adminApi token  =
+    let bearer = $"Bearer {token}"
+    Remoting.createApi ()
+    |> Remoting.withAuthorizationHeader bearer
+    |> Remoting.withRouteBuilder Route.builder
+    |> Remoting.buildProxy<IAdminApi>

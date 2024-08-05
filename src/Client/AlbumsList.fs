@@ -63,9 +63,10 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
          match cart with
          | Some cartId -> { model with CartId = cartId }, Cmd.OfAsync.perform guestApi.addToCart (cartId, id) AddedToCart
          | None ->
-             let guid = "%s{Guid.NewGuid ()}"
-             Session.saveCart guid
-             { model with CartId = guid }, Cmd.OfAsync.perform guestApi.addToCart (guid, id) AddedToCart
+             let guid = Guid.NewGuid ()
+             let guidString = guid.ToString "D"
+             Session.saveCart guidString
+             { model with CartId = guidString }, Cmd.OfAsync.perform guestApi.addToCart (guidString, id) AddedToCart
      | AddedToCart _ -> model, Cmd.none
      | AddAlbum ->
          model, Cmd.navigate ("albums", "create")
@@ -170,14 +171,17 @@ let genresListView (genresList : Genre list) (dispatch: Msg -> unit) =
                     ]
                 ]
             ]
-            Bulma.column [
-                Html.button [
-                    text.hasTextCentered
-                    prop.text "Add Album"
-                    prop.onClick (fun _ -> AddAlbum |> dispatch)
-                    color.hasTextDark
+            match Session.loadUser () |> Option.map UserClient.User |> Option.defaultValue UserClient.Guest with
+            | User u when u.Role = "Admin" ->
+                Bulma.column [
+                    Html.button [
+                        text.hasTextCentered
+                        prop.text "Add Album"
+                        prop.onClick (fun _ -> AddAlbum |> dispatch)
+                        color.hasTextDark
+                    ]
                 ]
-            ]
+            | _ -> Html.none
         ]
     ]
 

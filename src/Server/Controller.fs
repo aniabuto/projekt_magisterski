@@ -52,8 +52,8 @@ let addToCart cartId albumId (ctx : DB.dataContext) =
 let getCartDetails cartId (ctx : DB.dataContext) =
     Repository.getCartDetails cartId ctx
 
-let removeFromCart (cart : Cart) (ctx : DB.dataContext) =
-    Repository.removeFromCart cart ctx
+let removeFromCart (cartId : string) (albumId : int) (ctx : DB.dataContext) =
+    Repository.removeFromCart cartId albumId ctx
 
 let getCarts cartId (ctx : DB.dataContext) =
     Repository.getCarts cartId ctx

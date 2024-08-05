@@ -35,7 +35,7 @@ type Msg =
     | GoBack
 
 
-let init id (authorizedApi: IAuthorizedApi) (userName : UserName) : Model * Cmd<Msg> =
+let init id (authorizedApi: IAdminApi) (userName : UserName) : Model * Cmd<Msg> =
     let model = {
         AlbumDetails = None
         AlbumId = id
@@ -48,7 +48,7 @@ let init id (authorizedApi: IAuthorizedApi) (userName : UserName) : Model * Cmd<
 
     model, cmd
 
-let update (authorizedApi: IAuthorizedApi) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let update (authorizedApi: IAdminApi) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
      | GotAlbumDetails albums ->
          match albums with
