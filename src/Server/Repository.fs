@@ -162,7 +162,7 @@ let getCart cartId albumId (ctx : DB.dataContext) =
     query {
         for cart in ctx.Public.Carts do
             where (cart.CartId = cartId && cart.AlbumId = albumId)
-            select (cart |> cartEntityToType)
+            select cart
     }
     |> Seq.tryHeadAsync
 
@@ -217,33 +217,23 @@ let getCarts cartId (ctx : DB.dataContext) =
         for cart in ctx.Public.Carts do
             sortBy cart.Id
             where (cart.CartId = cartId)
-            select (cart |> cartEntityToType)
+            select cart
     }
     |> List.executeQueryAsync
 
 let upgradeCarts (cartId : string, username :string) (ctx : DB.dataContext) =
     async {
-        // let! maybeCarts = getCarts cartId ctx
-        let foundCarts =
-            query {
-                for cart in ctx.Public.Carts do
-                    where (cart.CartId = cartId)
-                    select (cart |> cartEntityToType)
-            }
-        for cart in foundCarts do
-            // let! maybeCart = getCart username cart.AlbumId ctx
-            let foundCart =
-                query {
-                    for cart_ in ctx.Public.Carts do
-                        where (cart_.CartId = username && cart_.AlbumId = cart_.AlbumId)
-                        select cart_
-                }|> Seq.tryHead
-            match foundCart with
+        let! maybeCarts = getCarts cartId ctx
+        for cart in maybeCarts do
+            let! maybeCart = getCart username cart.AlbumId ctx
+            match maybeCart with
             | Some existing ->
                 existing.Count <- existing.Count + cart.Count
                 deleteCart cart.CartId cart.AlbumId ctx
+                ctx.SubmitUpdates()
             | None ->
                 cart.CartId <- username
+                ctx.SubmitUpdates()
         ctx.SubmitUpdates()
     }
 

@@ -245,14 +245,18 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
     | _, OnSessionChange ->
         let session = Session.loadUser ()
         let user = session |> Option.map User |> Option.defaultValue Guest
+        match user with
+        | User u -> Session.saveCart u.UserName.Value
+        | _ -> Session.deleteCart ()
         let cmd =
             session
-            |> Option.map (fun _ -> Cmd.none)
+            |> Option.map (fun u -> Cmd.OfAsync.perform (authorizedApi u.Token).updateCarts (model.CurrentCartId, u.UserName.Value) RefreshCart )
             |> Option.defaultValue (Cmd.navigate "albums")
         { model with CurrentUser = user }, cmd
     | _, Logout ->
         model, Cmd.OfFunc.either Session.deleteUser () LoggedOut Fail
     | _, LoggedOut _ ->
+        Session.deleteCart ()
         { model with CurrentUser = Guest }, Cmd.navigate "albums"
     | _, ToggleRModal value ->
         {model with RModalShown = value }, Cmd.none
@@ -479,12 +483,11 @@ let nonEmptyCart (carts : CartDetails list) (dispatch: Msg -> unit) =
         Bulma.modalCardFoot [
             Bulma.container [
                 Bulma.block [
-                    Bulma.label "Total price:"
                     yield Bulma.input.text [
                         let total =
                             carts
                             |> List.sumBy (fun c -> c.Price * (decimal c.Count))
-                        prop.value (string $"{total}") // TODO: adjust price to cart contents
+                        prop.value (string $"{total}")
                         prop.readOnly true
                     ]
                 ]
@@ -495,10 +498,10 @@ let nonEmptyCart (carts : CartDetails list) (dispatch: Msg -> unit) =
                         prop.text "Checkout"
                         prop.onClick (fun _ -> dispatch GoToCheckout)
                     ]
-                    Bulma.button.button [
-                        prop.text "Clear"
-                        prop.onClick (fun _ -> dispatch ClearCart)
-                    ]
+                    // Bulma.button.button [
+                    //     prop.text "Clear"
+                    //     prop.onClick (fun _ -> dispatch ClearCart)
+                    // ]
                 ]
             ]
         ]

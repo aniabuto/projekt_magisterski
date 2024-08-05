@@ -33,18 +33,18 @@ let guestApi =
         getUser = fun username -> Controller.getUser username db
         newUser = fun (username, password, email) -> Controller.newUser (username, password, email) db
         login = fun (username, password) -> Controller.login (username, password) db
-        getCart = fun (cartId, albumId) -> Controller.getCart cartId albumId db
+        // getCart = fun (cartId, albumId) -> Controller.getCart cartId albumId db
         addToCart = fun (cartId, albumId) -> Controller.addToCart cartId albumId db
         getCartDetails = fun cartId -> Controller.getCartDetails cartId db
         removeFromCart = fun (cartId, albumId) -> Controller.removeFromCart cartId albumId db
-        getCarts = fun cartId -> Controller.getCarts cartId db
-        updateCarts = fun (cartId, username) -> Controller.updateCarts (cartId, username) db
+        // getCarts = fun cartId -> Controller.getCarts cartId db
     }
 
 let authorizedApi =
     let db = Db.createContext connectionString
     {
         placeOrder = fun username -> Controller.placeOrder username db
+        updateCarts = fun (cartId, username) -> Controller.updateCarts (cartId, username) db
     }
 
 let adminApi =
