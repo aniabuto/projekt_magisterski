@@ -43,7 +43,8 @@ let guestApi =
 let authorizedApi =
     let db = Db.createContext connectionString
     {
-        placeOrder = fun username -> Controller.placeOrder username db
+        placeOrder = fun (username, firstName, lastName, address, promoCode) ->
+            Controller.placeOrder (username, firstName, lastName, address, promoCode) db
         updateCarts = fun (cartId, username) -> Controller.updateCarts (cartId, username) db
     }
 

@@ -45,7 +45,7 @@ let init (guestApi: IGuestApi) : Model * Cmd<Msg> =
 let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
      | GotAlbumsDetails albums ->
-         { model with AlbumsDetails =   albums }, Cmd.none
+         { model with AlbumsDetails = albums }, Cmd.none
      | GotGenres genres ->
          { model with Genres = genres }, Cmd.none
      | FilterByGenre genre ->

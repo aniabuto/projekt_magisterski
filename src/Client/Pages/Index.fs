@@ -16,6 +16,7 @@ open Browser
 open Client.Exceptions
 
 type Page =
+    | BestsellersList of BestsellersList.Model
     | AlbumsList of AlbumsList.Model
     | ArtistsList of ArtistsList.Model
     | GenresList of GenresList.Model
@@ -40,7 +41,14 @@ type RegisterValues = {
 
 type RegisterForm = Form.View.Model<RegisterValues>
 
+type CheckoutValues = {
+    FirstName : string
+    LastName : string
+    Address : string
+    PromoCode : string
+}
 
+type CheckoutForm = Form.View.Model<CheckoutValues>
 
 type Model = {
     CurrentPage : Page
@@ -48,10 +56,12 @@ type Model = {
     CurrentCartId : string
     CartItems : CartDetails list
     CartModalShown : bool
+    CheckoutModalShown : bool
     LModalShown : bool
     RModalShown : bool
     LoginForm : LoginForm
     RegisterForm : RegisterForm
+    CheckoutForm : CheckoutForm
 }
 
 type Msg =
@@ -83,6 +93,10 @@ type Msg =
     | RegisterFormChanged of RegisterForm
     | Register of string * string * string
     | RegisteredUser of Shared.Types.User
+    | Checkout of string * string * string * string
+    | CancelCheckout
+    | CheckoutFormChanged of CheckoutForm
+    | OrderPlaced of unit
     | UserChangeSuccess of unit
     | OnSessionChange
     | LoggedOut of unit
@@ -96,6 +110,9 @@ let initFromUrl model url =
     | ["albums"] ->
         let albumsListModel, albumsListMsg = AlbumsList.init guestApi
         { model with CurrentPage = AlbumsList albumsListModel}, albumsListMsg |> Cmd.map AlbumsListMsg
+    | ["bestsellers"] ->
+        let bestsellersListModel, bestsellersListMsg = BestsellersList.init guestApi
+        { model with CurrentPage = BestsellersList bestsellersListModel}, bestsellersListMsg |> Cmd.map BestsellersListMsg
     | ["artists"] ->
         let artistsListModel, artistsListMsg = ArtistsList.init guestApi
         { model with CurrentPage = ArtistsList artistsListModel}, artistsListMsg |> Cmd.map ArtistsListMsg
@@ -137,10 +154,12 @@ let init () : Model * Cmd<Msg> =
         CurrentCartId = ""
         CartItems = []
         CartModalShown = false
+        CheckoutModalShown = false
         LModalShown = false
         RModalShown = false
         LoginForm = Form.View.idle { LUsername = ""; LPassword = "" }
         RegisterForm = Form.View.idle { Username = ""; Email = ""; Password = "" }
+        CheckoutForm =  Form.View.idle { FirstName = ""; LastName = ""; Address = ""; PromoCode = "" }
     }
 
 let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
@@ -160,11 +179,11 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         let model = { model with CurrentPage = GenresList newGenresListModel }
 
         model, newCommand |> Cmd.map GenresListMsg
-    // | BestsellersList bestsellersList, BestsellersListMsg bestsellersListMessage ->
-    //     let newBestsellersListModel, newCommand = BestsellersList.update bestsellersListMessage bestsellersList
-    //     let model = { model with CurrentPage = BestsellersList newBestsellersListModel }
-    //
-    //     model, newCommand |> Cmd.map BestsellersListMsg
+    | BestsellersList bestsellersList, BestsellersListMsg bestsellersListMessage ->
+        let newBestsellersListModel, newCommand = BestsellersList.update bestsellersListMessage bestsellersList
+        let model = { model with CurrentPage = BestsellersList newBestsellersListModel }
+
+        model, newCommand |> Cmd.map BestsellersListMsg
     | AlbumDetails albumsList, AlbumDetailsMsg albumsListMessage ->
         let token =
             match model.CurrentUser with
@@ -217,6 +236,11 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
             CartModalShown = true }, Cmd.none
     | _, ClearCart ->
         model, Cmd.none
+    | _, GoToCheckout ->
+        match model.CurrentUser with
+        | User data -> { model with CheckoutModalShown = true }, Cmd.none
+        | Guest -> model, Cmd.none
+
     | _, RefreshCart _ ->
         let cartId =
             match model.CurrentUser with
@@ -268,10 +292,28 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         model, cmd
     | _, RegisterFormChanged form ->
         { model with RegisterForm = form }, Cmd.none
+    | _, CheckoutFormChanged form ->
+        { model with CheckoutForm = form }, Cmd.none
+    | _, Checkout (firstName, lastName, address, promoCode) ->
+        let username, token =
+            match model.CurrentUser with
+            | User data -> data.UserName.Value, data.Token
+            | Guest -> "", ""
+        let cmd = Cmd.OfAsync.perform
+                      (authorizedApi token).placeOrder
+                      (username, firstName, lastName, address, promoCode)
+                      OrderPlaced
+        { model with
+            CheckoutForm = Form.View.idle { FirstName = ""; LastName = ""; Address = ""; PromoCode = "" }
+            CheckoutModalShown = false
+            CartModalShown = false }, cmd
+    | _, CancelCheckout ->
+        { model with
+            CheckoutForm = Form.View.idle { FirstName = ""; LastName = ""; Address = ""; PromoCode = "" }
+            CheckoutModalShown = false }, Cmd.none
     | _, GoBack ->
         model, Cmd.navigateBack 1
     | _, _ -> initFromUrl model (Router.currentUrl ())
-
 
 let notAuthorizedView dispatch =
     Bulma.box [
@@ -295,7 +337,7 @@ let containerBox model dispatch =
     | AlbumCreate albumsModel -> AlbumCreate.view albumsModel (AlbumCreateMsg >> dispatch)
     | ArtistsList artistsModel -> ArtistsList.view artistsModel (ArtistsListMsg >> dispatch)
     | GenresList genresModel -> GenresList.view genresModel (GenresListMsg >> dispatch)
-    // | BestsellersList bestsellersModel -> BestsellersList.view bestsellersModel (BestsellersListMsg >> dispatch)
+    | BestsellersList bestsellersModel -> BestsellersList.view bestsellersModel (BestsellersListMsg >> dispatch)
     | NotFound -> Bulma.box "Page not found"
     | NotAuthorized -> notAuthorizedView dispatch
 
@@ -315,18 +357,6 @@ let navBrand =
 
 let toggleLogInModal (model : Model) =
     { model with LModalShown = true }
-
-let validateUsername name =
-    if String.IsNullOrWhiteSpace name |> not then
-        Ok name
-    else
-        Error "You need to fill in a username."
-
-let validatePassword password =
-    if String.IsNullOrWhiteSpace password |> not then
-        Ok password
-    else
-        Error "You need to fill in a password."
 
 let loginForm _ : Form.Form<LoginValues, Msg, _> =
     let usernameField =
@@ -419,6 +449,73 @@ let registerForm _ : Form.Form<RegisterValues, Msg, _> =
         |> Form.append emailField
         |> Form.append passwordField
 
+let checkoutForm _ : Form.Form<CheckoutValues, Msg, _> =
+    let firstNameField =
+        Form.textField {
+            Parser = Ok
+            Value = fun values -> values.FirstName
+            Update = fun newValue values -> { values with FirstName = newValue }
+            Error = fun _ -> None
+            Attributes =
+                {
+                    Label = "First Name"
+                    Placeholder = "first name"
+                    HtmlAttributes = []
+                }
+        }
+
+    let lastNameField =
+        Form.textField {
+            Parser = Ok
+            Value = fun values -> values.LastName
+            Update = fun newValue values -> { values with LastName =  newValue }
+            Error = fun _ -> None
+            Attributes =
+                {
+                    Label = "Last Name"
+                    Placeholder = "last name"
+                    HtmlAttributes = []
+                }
+        }
+
+    let addressField =
+        Form.textField {
+            Parser = Ok
+            Value = fun values -> values.Address
+            Update = fun newValue values -> { values with Address = newValue }
+            Error = fun _ -> None
+            Attributes =
+                {
+                    Label = "Address"
+                    Placeholder = "address"
+                    HtmlAttributes = []
+                }
+        }
+
+    let promoCodeField =
+        Form.textField {
+            Parser = Ok
+            Value = fun values -> values.PromoCode
+            Update = fun newValue values -> { values with PromoCode = newValue }
+            Error = fun _ -> None
+            Attributes =
+                {
+                    Label = "Promo Code"
+                    Placeholder = "promo code"
+                    HtmlAttributes = []
+                }
+        }
+
+    let onSubmit =
+        fun firstName lastName address promoCode ->
+            Checkout (firstName, lastName, address, promoCode)
+
+    Form.succeed onSubmit
+        |> Form.append firstNameField
+        |> Form.append lastNameField
+        |> Form.append addressField
+        |> Form.append promoCodeField
+
 let emptyCart (dispatch: Msg -> unit) =
     Bulma.modalCard [
         Bulma.modalCardHead [
@@ -437,7 +534,7 @@ let emptyCart (dispatch: Msg -> unit) =
         Bulma.modalCardFoot []
     ]
 
-let nonEmptyCart (carts : CartDetails list) (dispatch: Msg -> unit) =
+let nonEmptyCart (carts : CartDetails list) (user : UserClient) (dispatch: Msg -> unit) =
     Bulma.modalCard [
         Bulma.modalCardHead [
             Bulma.modalCardTitle "My Cart"
@@ -466,9 +563,6 @@ let nonEmptyCart (carts : CartDetails list) (dispatch: Msg -> unit) =
                             prop.text (string $"%.2f{cart.Price}")
                         ]
                         Html.td [
-                            // Bulma.input.number [
-                            //     prop.
-                            // ]
                             prop.text (string $"{cart.Count}")
                         ]
                         Html.td [
@@ -491,27 +585,23 @@ let nonEmptyCart (carts : CartDetails list) (dispatch: Msg -> unit) =
                         prop.readOnly true
                     ]
                 ]
-
-                Bulma.buttons [
-                    Bulma.button.button [
-                        Bulma.color.isSuccess
-                        prop.text "Checkout"
-                        prop.onClick (fun _ -> dispatch GoToCheckout)
-                    ]
-                    // Bulma.button.button [
-                    //     prop.text "Clear"
-                    //     prop.onClick (fun _ -> dispatch ClearCart)
-                    // ]
-                ]
+                match user with
+                | User data ->
+                        Bulma.buttons [
+                            Bulma.button.button [
+                                Bulma.color.isSuccess
+                                prop.text "Checkout"
+                                prop.onClick (fun _ -> dispatch GoToCheckout)
+                            ]
+                        ]
+                | Guest -> Bulma.subtitle "Log in to checkout"
             ]
         ]
     ]
 
-
-let cart (dispatch: Msg -> unit) = function
+let cart (user : UserClient) (dispatch: Msg -> unit) = function
     | [] -> emptyCart dispatch
-    | list -> nonEmptyCart list dispatch
-
+    | list -> nonEmptyCart list user dispatch
 
 let view (model: Model) (dispatch: Msg -> unit) =
     React.router [
@@ -628,7 +718,36 @@ let view (model: Model) (dispatch: Msg -> unit) =
                                 prop.id "modal-cart"
                                 prop.children [
                                     Bulma.modalBackground []
-                                    cart dispatch model.CartItems
+                                    cart model.CurrentUser dispatch model.CartItems
+                                ]
+                            ]
+
+                            Bulma.modal [
+                                if model.CheckoutModalShown then Bulma.modal.isActive
+                                prop.id "modal-cart"
+                                prop.children [
+                                    Bulma.modalBackground []
+                                    Bulma.modalCard [
+                                        Bulma.modalCardHead [
+                                            Bulma.modalCardTitle "Checkout"
+                                            Bulma.delete [
+                                                prop.ariaLabel "close"
+                                                prop.onClick (fun _ -> CancelCheckout |> dispatch)
+                                            ]
+                                        ]
+                                        Bulma.modalCardBody [
+                                            Form.View.asHtml
+                                                {
+                                                    Dispatch = dispatch
+                                                    OnChange = CheckoutFormChanged
+                                                    Action = Form.View.Action.SubmitOnly "Checkout"
+                                                    Validation = Form.View.ValidateOnSubmit
+                                                }
+                                                (checkoutForm ())
+                                                model.CheckoutForm
+                                        ]
+                                        Bulma.modalCardFoot []
+                                    ]
                                 ]
                             ]
                             containerBox model dispatch
@@ -638,7 +757,6 @@ let view (model: Model) (dispatch: Msg -> unit) =
             ]
         ]
     ]
-
 
 let resetStorage onResetStorageMsg =
     let register dispatch =

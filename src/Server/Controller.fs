@@ -77,5 +77,7 @@ let getUser username (ctx : DB.dataContext) =
 let newUser (username, password, email) (ctx : DB.dataContext) =
     Repository.newUser (username, password, email) ctx
 
-let placeOrder (username : string) (ctx : DB.dataContext) =
-    Repository.placeOrder username ctx
+let placeOrder
+    (username : string, firstName : string, lastName : string, address : string, promoCode : string)
+    (ctx : DB.dataContext) =
+        Repository.placeOrder (username, firstName, lastName, address, promoCode = "1234") ctx

@@ -31,7 +31,7 @@ type IGuestApi =
 type IAuthorizedApi =
     {
         updateCarts : string * string -> Async<unit>
-        placeOrder : string -> Async<unit>
+        placeOrder : string * string * string * string * string -> Async<unit>
     }
 
 type IAdminApi =

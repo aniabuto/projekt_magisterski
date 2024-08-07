@@ -254,20 +254,26 @@ let newUser (username, pass, email) (ctx : DB.dataContext) =
         return {u with Password = pass }
     }
 
-let placeOrder (username : string) (ctx : DB.dataContext) =
-    async {
-        let! maybeCarts = getCartDetails username ctx
-        let total = maybeCarts |> List.sumBy (fun c -> decimal c.Count * c.Price)
-        let order = ctx.Public.Orders.Create(System.DateTime.UtcNow, total)
-        order.Username <- username
-        ctx.SubmitUpdates()
-        for cart in maybeCarts do
-            ctx.Public.Orderdetails.Create(
-                cart.AlbumId,
-                order.Id,
-                cart.Count,
-                cart.Price) |> ignore
-            let! maybeCart = getCart cart.CartId cart.AlbumId ctx
-            maybeCart |> Option.iter (fun c -> deleteCart c.CartId c.AlbumId ctx)
-        ctx.SubmitUpdates()
-    }
+let placeOrder
+    ((username : string), (firstName : string), (lastName : string), (address : string), (promoCode : bool))
+    (ctx : DB.dataContext) =
+        async {
+            let! maybeCarts = getCartDetails username ctx
+            let totalSum = maybeCarts |> List.sumBy (fun c -> decimal c.Count * c.Price)
+            let total = if promoCode then totalSum * (decimal 0.8) else totalSum
+            let order = ctx.Public.Orders.Create(System.DateTime.UtcNow, total)
+            order.Username <- username
+            order.Firstname <- firstName
+            order.Lastname <- lastName
+            order.Address <- address
+            ctx.SubmitUpdates()
+            for cart in maybeCarts do
+                ctx.Public.Orderdetails.Create(
+                    cart.AlbumId,
+                    order.Id,
+                    cart.Count,
+                    cart.Price) |> ignore
+                let! maybeCart = getCart cart.CartId cart.AlbumId ctx
+                maybeCart |> Option.iter (fun c -> deleteCart c.CartId c.AlbumId ctx)
+            ctx.SubmitUpdates()
+        }
