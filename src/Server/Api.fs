@@ -33,11 +33,9 @@ let guestApi =
         getUser = fun username -> Controller.getUser username db
         newUser = fun (username, password, email) -> Controller.newUser (username, password, email) db
         login = fun (username, password) -> Controller.login (username, password) db
-        // getCart = fun (cartId, albumId) -> Controller.getCart cartId albumId db
         addToCart = fun (cartId, albumId) -> Controller.addToCart cartId albumId db
         getCartDetails = fun cartId -> Controller.getCartDetails cartId db
         removeFromCart = fun (cartId, albumId) -> Controller.removeFromCart cartId albumId db
-        // getCarts = fun cartId -> Controller.getCarts cartId db
     }
 
 let authorizedApi =

@@ -21,11 +21,9 @@ type IGuestApi =
         login : string * string -> Async<UserData>
         getUser : string -> Async<User option>
         newUser : string * string * string -> Async<User>
-        // getCart : string * int -> Async<Cart option>
         addToCart : string * int -> Async<unit>
         getCartDetails : string -> Async<CartDetails list>
         removeFromCart : string * int -> Async<unit>
-        // getCarts : string -> Async<Cart list>
     }
 
 type IAuthorizedApi =

@@ -15,17 +15,17 @@ let private createPassPhrase () =
     randomNumber
 
 let secret =
-    let fi = FileInfo("./temp/token.txt")
+    let fileInfo = FileInfo("./temp/token.txt")
 
-    if not fi.Exists then
+    if not fileInfo.Exists then
         let passPhrase = createPassPhrase ()
 
-        if not fi.Directory.Exists then
-            fi.Directory.Create()
+        if not fileInfo.Directory.Exists then
+            fileInfo.Directory.Create()
 
-        File.WriteAllBytes(fi.FullName, passPhrase)
+        File.WriteAllBytes(fileInfo.FullName, passPhrase)
 
-    File.ReadAllBytes(fi.FullName) |> System.Text.Encoding.UTF8.GetString
+    File.ReadAllBytes(fileInfo.FullName) |> System.Text.Encoding.UTF8.GetString
 
 let issuer = "safe_music_store.io"
 

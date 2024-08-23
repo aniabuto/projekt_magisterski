@@ -216,7 +216,8 @@
     <Message Condition=" '$(PaketRestoreRequired)' == 'true' " Importance="low" Text="Detected a change ('$(PaketRestoreRequiredReason)') in the project file '$(MSBuildProjectFullPath)', calling paket restore" />
     <Error Text="Stop build because of PAKET_ERROR_ON_MSBUILD_EXEC and we detected a change ('$(PaketRestoreRequiredReason)') in the project file '$(MSBuildProjectFullPath)'" Condition=" '$(PAKET_ERROR_ON_MSBUILD_EXEC)' == 'true' AND '$(PaketRestoreRequired)' == 'true' " />
     <Exec Command='$(PaketCommand) restore --project "$(MSBuildProjectFullPath)" --output-path "$(PaketIntermediateOutputPath)" --target-framework "$(TargetFrameworks)"' Condition=" '$(PaketRestoreRequired)' == 'true' AND '$(TargetFramework)' == '' " ContinueOnError="false" />
-    <Exec Command='$(PaketCommand) restore --project "$(MSBuildProjectFullPath)" --output-path "$(PaketIntermediateOutputPath)" --target-framework "$(TargetFramework)"' Condition=" '$(PaketRestoreRequired)' == 'true' AND '$(TargetFramework)' != '' " ContinueOnError="false" />
+    <Exec
+        Command='$(PaketCommand) restore --project "$(MSBuildProjectFullPath)" --output-path "$(PaketIntermediateOutputPath)" --target-framework "$(TargetFramework)"' Condition=" '$(PaketRestoreRequired)' == 'true' AND '$(TargetFramework)' != '' " ContinueOnError="false" />
 
     <!-- This shouldn't actually happen, but just to be sure. -->
     <PropertyGroup>

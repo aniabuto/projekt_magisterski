@@ -1,4 +1,4 @@
-FROM postgres
+FROM postgres:14.3
 COPY postgres_create.sql /docker-entrypoint-initdb.d/postgres_create.sql
 
 ENV POSTGRES_USER safe

@@ -15,9 +15,8 @@ let getAlbumsForGenre genreName (ctx : DB.dataContext) =
         Repository.getAlbumsForGenre genreName ctx
     with
     | ex ->
-        // Log or handle the exception
         printfn $"An error occurred: %s{ex.Message}"
-        raise ex // Re-throw the exception if needed
+        raise ex
 
 let getAlbumDetails id (ctx: DB.dataContext) =
     Repository.getAlbumDetails id ctx

@@ -5,7 +5,7 @@ open Shared.Types
 
 let genreEntityToType (genre : DB.dataContext.``public.genresEntity``) =
     {
-        Id = genre.GenresId
+        Id = genre.Id
         Name =  genre.Name
         Description =  genre.Description
     }
@@ -20,8 +20,8 @@ let artistEntityToType (artist : DB.dataContext.``public.artistsEntity``) =
 let albumEntityToType (album : DB.dataContext.``public.albumsEntity``) =
     {
         Id = album.Id
-        ArtistId =  album.Artistid
-        GenreId =  album.Genreid
+        ArtistId =  album.ArtistId
+        GenreId =  album.GenreId
         Title =  album.Title
         Price =  album.Price
         Thumbnail =  album.Thumbnail
@@ -86,7 +86,7 @@ let cartDetailsEntityToType (cart : DB.dataContext.``public.cartdetailsEntity``)
         CartId = cart.CartId
         Count = cart.Count
         AlbumTitle = cart.Albumtitle
-        AlbumId = cart.Albumid
+        AlbumId = cart.AlbumId
         Price = cart.Price
     }
 

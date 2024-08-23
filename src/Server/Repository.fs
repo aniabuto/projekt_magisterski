@@ -10,14 +10,14 @@ open System
 let getGenres (ctx : DB.dataContext) =
     query {
         for genre in ctx.Public.Genres do
-            sortBy genre.GenresId
+            sortBy genre.Id
             select (genre |> genreEntityToType)
     } |> List.executeQueryAsync
 
 let getAlbumsForGenre genreName (ctx : DB.dataContext) =
     query {
         for album in ctx.Public.Albums do
-            join genre in ctx.Public.Genres on (album.Genreid = genre.GenresId)
+            join genre in ctx.Public.Genres on (album.GenreId = genre.Id)
             where (genre.Name = genreName)
             sortBy album.Id
             select (album |> albumEntityToType)
@@ -168,7 +168,6 @@ let getCart cartId albumId (ctx : DB.dataContext) =
 
 let addToCart cartId albumId (ctx : DB.dataContext) =
     async {
-        // let! maybeCart = getCart cartId albumId ctx
         let foundCart =
             query {
                 for cart in ctx.Public.Carts do
@@ -209,7 +208,6 @@ let removeFromCart (cartId : string) (albumId : int) (ctx : DB.dataContext) =
                 deleteCart cart.CartId cart.AlbumId ctx
             ctx.SubmitUpdates()
         | None -> ()
-
     }
 
 let getCarts cartId (ctx : DB.dataContext) =

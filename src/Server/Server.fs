@@ -10,8 +10,6 @@ open Giraffe
 open ServerProject
 open Shared
 
-// let connectionString = @"Server=localhost\SQLEXPRESS;Database=SafeMusicStore;Trusted_Connection=True;"
-
 let webApp =
     let authenticated =
         warbler (fun _ -> requiresAuthentication (challenge JwtBearerDefaults.AuthenticationScheme))
