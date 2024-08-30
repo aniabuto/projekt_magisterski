@@ -85,7 +85,7 @@ let cartDetailsEntityToType (cart : DB.dataContext.``public.cartdetailsEntity``)
     {
         CartId = cart.CartId
         Count = cart.Count
-        AlbumTitle = cart.Albumtitle
+        AlbumTitle = cart.AlbumTitle
         AlbumId = cart.AlbumId
         Price = cart.Price
     }

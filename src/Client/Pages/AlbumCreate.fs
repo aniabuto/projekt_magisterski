@@ -42,7 +42,13 @@ type Msg =
 
 let init (authorizedApi: IAdminApi) (userName : UserName) : Model * Cmd<Msg> =
     let model = {
-        Form = Form.View.idle { Title = ""; Thumbnail = placeholderString; Price = string(Decimal.Zero); Artist = "0"; Genre = "0" }
+        Form = Form.View.idle {
+            Title = ""
+            Thumbnail = placeholderString
+            Price = string(Decimal.Zero)
+            Artist = "0"
+            Genre = "0"
+        }
         Artists = []
         Genres = []
     }
@@ -61,7 +67,8 @@ let update (authorizedApi: IAdminApi) (msg: Msg) (model: Model) : Model * Cmd<Ms
      | GotGenres genres ->
          { model with Genres = genres }, Cmd.none
      | CreateAlbum ( artistId, genreId, title, price, thumbnail) ->
-         model, Cmd.OfAsyncImmediate.perform authorizedApi.createAlbum (artistId, genreId, price, title, thumbnail) AlbumCreated
+         model, Cmd.OfAsyncImmediate.perform
+                    authorizedApi.createAlbum (artistId, genreId, price, title, thumbnail) AlbumCreated
      | FormChanged form ->
          { model with Form = form }, Cmd.none
      | AlbumCreated id ->

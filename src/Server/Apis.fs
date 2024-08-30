@@ -1,4 +1,4 @@
-module ServerProject.Api
+module ServerProject.Apis
 
 open System
 open Fable.Remoting.Server

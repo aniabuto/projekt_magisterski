@@ -55,7 +55,11 @@ let update (authorizedApi: IAdminApi) (msg: Msg) (model: Model) : Model * Cmd<Ms
          | Some album ->
              { model with
                 AlbumDetails = Some album
-                Form = Form.View.idle { Title = album.Title; Thumbnail = album.Thumbnail; Price = string(album.Price) }
+                Form = Form.View.idle {
+                    Title = album.Title
+                    Thumbnail = album.Thumbnail
+                    Price = string(album.Price)
+                }
              }, Cmd.none
          | None ->
                 { model with
@@ -63,7 +67,8 @@ let update (authorizedApi: IAdminApi) (msg: Msg) (model: Model) : Model * Cmd<Ms
                     Form = Form.View.idle { Title = ""; Thumbnail = ""; Price = string(Decimal.Zero) }
                 }, Cmd.none
      | EditAlbum ( title, price, thumbnail) ->
-         model, Cmd.OfAsyncImmediate.perform authorizedApi.updateAlbum (model.AlbumId, title, price, thumbnail) AlbumEdited
+         model, Cmd.OfAsyncImmediate.perform
+                    authorizedApi.updateAlbum (model.AlbumId, title, price, thumbnail) AlbumEdited
      | FormChanged form ->
          { model with Form = form }, Cmd.none
      | AlbumEdited () ->

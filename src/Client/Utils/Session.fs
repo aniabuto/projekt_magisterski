@@ -5,6 +5,8 @@ open Thoth.Json
 
 [<Literal>]
 let USER_SESSION_KEY = "user"
+
+[<Literal>]
 let CART_SESSION_KEY = "cart"
 
 let loadUser () : UserData option =

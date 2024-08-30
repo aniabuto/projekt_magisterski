@@ -11,7 +11,7 @@
         <Compile Include="Repository.fs" />
         <Compile Include="Authorize.fs" />
         <Compile Include="Controller.fs" />
-        <Compile Include="Api.fs" />
+        <Compile Include="Apis.fs" />
         <Compile Include="Server.fs" />
     </ItemGroup>
     <ItemGroup>

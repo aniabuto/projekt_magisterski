@@ -1,5 +1,5 @@
 module Server
-//
+
 open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
 open Giraffe.Middleware
@@ -20,19 +20,19 @@ let webApp =
     choose [
         Remoting.createApi ()
         |> Remoting.withRouteBuilder Route.builder
-        |> Remoting.fromValue Api.guestApi
+        |> Remoting.fromValue Apis.guestApi
         |> Remoting.buildHttpHandler
 
         authenticated >=> (
             Remoting.createApi ()
             |> Remoting.withRouteBuilder Route.builder
-            |> Remoting.fromValue Api.authorizedApi
+            |> Remoting.fromValue Apis.authorizedApi
             |> Remoting.buildHttpHandler)
 
         authenticated >=> isAdmin >=> (
             Remoting.createApi ()
             |> Remoting.withRouteBuilder Route.builder
-            |> Remoting.fromValue Api.adminApi
+            |> Remoting.fromValue Apis.adminApi
             |> Remoting.buildHttpHandler)
     ]
 

@@ -168,21 +168,17 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         let newAlbumsListModel, newCommand = AlbumsList.update albumsListMessage albumsList
         let model = { model with CurrentPage = AlbumsList newAlbumsListModel; CurrentCartId = newAlbumsListModel.CartId }
         model, newCommand |> Cmd.map AlbumsListMsg
-
     | ArtistsList artistsList, ArtistsListMsg artistsListMessage ->
         let newArtistsModel, newCommand = ArtistsList.update artistsListMessage artistsList
         let model = { model with CurrentPage = ArtistsList newArtistsModel }
-
         model, newCommand |> Cmd.map ArtistsListMsg
     | GenresList genresList, GenresListMsg genresListMessage ->
         let newGenresListModel, newCommand = GenresList.update genresListMessage genresList
         let model = { model with CurrentPage = GenresList newGenresListModel }
-
         model, newCommand |> Cmd.map GenresListMsg
     | BestsellersList bestsellersList, BestsellersListMsg bestsellersListMessage ->
         let newBestsellersListModel, newCommand = BestsellersList.update bestsellersListMessage bestsellersList
         let model = { model with CurrentPage = BestsellersList newBestsellersListModel }
-
         model, newCommand |> Cmd.map BestsellersListMsg
     | AlbumDetails albumsList, AlbumDetailsMsg albumsListMessage ->
         let token =
@@ -191,7 +187,6 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
             | Guest -> ""
         let newAlbumsListModel, newCommand = AlbumDetails.update (adminApi token) albumsListMessage albumsList
         let model = { model with CurrentPage = AlbumDetails newAlbumsListModel }
-
         model, newCommand |> Cmd.map AlbumDetailsMsg
     | AlbumEdit albumsList, AlbumEditMsg albumsListMessage ->
         let token =
@@ -200,7 +195,6 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
             | Guest -> ""
         let newAlbumsListModel, newCommand = AlbumEdit.update (adminApi token) albumsListMessage albumsList
         let model = { model with CurrentPage = AlbumEdit newAlbumsListModel }
-
         model, newCommand |> Cmd.map AlbumEditMsg
     | AlbumCreate albumsList, AlbumCreateMsg albumsListMessage ->
         let token =
@@ -209,17 +203,7 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
             | Guest -> ""
         let newAlbumsListModel, newCommand = AlbumCreate.update (adminApi token) albumsListMessage albumsList
         let model = { model with CurrentPage = AlbumCreate newAlbumsListModel }
-
         model, newCommand |> Cmd.map AlbumCreateMsg
-    | _, UrlChanged url -> initFromUrl model url
-    | _, NavigateBestsellers _ ->
-        model, Cmd.navigate "bestsellers"
-    | _, NavigateAlbums _ ->
-        model, Cmd.navigate "albums"
-    | _, NavigateArtists _ ->
-        model, Cmd.navigate "artists"
-    | _, NavigateGenres _ ->
-        model, Cmd.navigate "genres"
     | _, ToggleViewCart value ->
         let cartId =
             match model.CurrentUser with
@@ -234,13 +218,10 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         { model with
             CartItems =  cartDetails
             CartModalShown = true }, Cmd.none
-    | _, ClearCart ->
-        model, Cmd.none
     | _, GoToCheckout ->
         match model.CurrentUser with
         | User data -> { model with CheckoutModalShown = true }, Cmd.none
         | Guest -> model, Cmd.none
-
     | _, RefreshCart _ ->
         let cartId =
             match model.CurrentUser with
@@ -264,8 +245,6 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         { model with LModalShown = false }, Cmd.OfFunc.either Session.saveUser user UserChangeSuccess Fail
     | _,  UserChangeSuccess _ ->
         { model with LModalShown = false }, Cmd.ofMsg OnSessionChange
-    | _, Fail ex ->
-        model, Cmd.none
     | _, OnSessionChange ->
         let session = Session.loadUser ()
         let user = session |> Option.map User |> Option.defaultValue Guest
@@ -274,7 +253,10 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         | _ -> Session.deleteCart ()
         let cmd =
             session
-            |> Option.map (fun u -> Cmd.OfAsync.perform (authorizedApi u.Token).updateCarts (model.CurrentCartId, u.UserName.Value) RefreshCart )
+            |> Option.map (fun u -> Cmd.OfAsync.perform
+                                        (authorizedApi u.Token).updateCarts
+                                        (model.CurrentCartId, u.UserName.Value)
+                                        RefreshCart )
             |> Option.defaultValue (Cmd.navigate "albums")
         { model with CurrentUser = user }, cmd
     | _, Logout ->
@@ -311,6 +293,17 @@ let update (message: Msg) (model: Model) : Model * Cmd<Msg> =
         { model with
             CheckoutForm = Form.View.idle { FirstName = ""; LastName = ""; Address = ""; PromoCode = "" }
             CheckoutModalShown = false }, Cmd.none
+    | _, Fail _ ->
+        model, Cmd.none
+    | _, UrlChanged url -> initFromUrl model url
+    | _, NavigateBestsellers _ ->
+        model, Cmd.navigate "bestsellers"
+    | _, NavigateAlbums _ ->
+        model, Cmd.navigate "albums"
+    | _, NavigateArtists _ ->
+        model, Cmd.navigate "artists"
+    | _, NavigateGenres _ ->
+        model, Cmd.navigate "genres"
     | _, GoBack ->
         model, Cmd.navigateBack 1
     | _, _ -> initFromUrl model (Router.currentUrl ())
@@ -398,42 +391,36 @@ let loginForm _ : Form.Form<LoginValues, Msg, _> =
 
 let registerForm _ : Form.Form<RegisterValues, Msg, _> =
     let usernameField =
-        Form.textField
-            {
+        Form.textField {
                 Parser = Ok
                 Value = fun values -> values.Username
                 Update = fun newValue values -> { values with Username = newValue }
                 Error = fun _ -> None
-                Attributes =
-                    {
+                Attributes = {
                         Label = "Username"
                         Placeholder = "username"
                         HtmlAttributes = []
                     }
             }
     let emailField =
-        Form.emailField
-            {
+        Form.emailField {
                 Parser = Ok
                 Value = fun values -> values.Email
                 Update = fun newValue values -> { values with Email = newValue }
                 Error = fun _ -> None
-                Attributes =
-                    {
+                Attributes = {
                         Label = "Email"
                         Placeholder = "email"
                         HtmlAttributes = []
                     }
             }
     let passwordField =
-        Form.passwordField
-            {
+        Form.passwordField {
                 Parser = Ok
                 Value = fun values -> values.Password
                 Update = fun newValue values -> { values with Password = newValue }
                 Error = fun _ -> None
-                Attributes =
-                    {
+                Attributes = {
                         Label = "Password"
                         Placeholder = "password"
                         HtmlAttributes = []
@@ -456,50 +443,43 @@ let checkoutForm _ : Form.Form<CheckoutValues, Msg, _> =
             Value = fun values -> values.FirstName
             Update = fun newValue values -> { values with FirstName = newValue }
             Error = fun _ -> None
-            Attributes =
-                {
+            Attributes = {
                     Label = "First Name"
                     Placeholder = "first name"
                     HtmlAttributes = []
                 }
         }
-
     let lastNameField =
         Form.textField {
             Parser = Ok
             Value = fun values -> values.LastName
             Update = fun newValue values -> { values with LastName =  newValue }
             Error = fun _ -> None
-            Attributes =
-                {
+            Attributes = {
                     Label = "Last Name"
                     Placeholder = "last name"
                     HtmlAttributes = []
                 }
         }
-
     let addressField =
         Form.textField {
             Parser = Ok
             Value = fun values -> values.Address
             Update = fun newValue values -> { values with Address = newValue }
             Error = fun _ -> None
-            Attributes =
-                {
+            Attributes = {
                     Label = "Address"
                     Placeholder = "address"
                     HtmlAttributes = []
                 }
         }
-
     let promoCodeField =
         Form.textField {
             Parser = Ok
             Value = fun values -> values.PromoCode
             Update = fun newValue values -> { values with PromoCode = newValue }
             Error = fun _ -> None
-            Attributes =
-                {
+            Attributes = {
                     Label = "Promo Code"
                     Placeholder = "promo code"
                     HtmlAttributes = []
@@ -546,10 +526,7 @@ let nonEmptyCart (carts : CartDetails list) (user : UserClient) (dispatch: Msg -
         Bulma.modalCardBody [
             Bulma.table [
                 yield Html.tr [
-                    for h in ["Album Name"; "Price (each)"; "Quantity"; ""] ->
-                        Html.th [
-                            prop.text h
-                        ]
+                    for h in ["Album Name"; "Price (each)"; "Quantity"; ""] -> Html.th [ prop.text h ]
                 ]
                 for cart in carts ->
                     Html.tr [
@@ -559,12 +536,8 @@ let nonEmptyCart (carts : CartDetails list) (user : UserClient) (dispatch: Msg -
                                 prop.onClick (fun _ -> GetAlbumDetails cart.AlbumId |> dispatch)
                             ]
                         ]
-                        Html.td [
-                            prop.text (string $"%.2f{cart.Price}")
-                        ]
-                        Html.td [
-                            prop.text (string $"{cart.Count}")
-                        ]
+                        Html.td [ prop.text (string $"%.2f{cart.Price}") ]
+                        Html.td [ prop.text (string $"{cart.Count}") ]
                         Html.td [
                             Html.button [
                                 prop.text "Remove"
@@ -586,7 +559,7 @@ let nonEmptyCart (carts : CartDetails list) (user : UserClient) (dispatch: Msg -
                     ]
                 ]
                 match user with
-                | User data ->
+                | User _ ->
                         Bulma.buttons [
                             Bulma.button.button [
                                 Bulma.color.isSuccess
@@ -676,7 +649,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
                                                         Action = Form.View.Action.SubmitOnly "Log In"
                                                         Validation = Form.View.ValidateOnSubmit
                                                     }
-                                                    (loginForm ())
+                                                    ( loginForm ())
                                                     model.LoginForm
                                             ]
                                             Bulma.modalClose [
@@ -750,6 +723,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
                                     ]
                                 ]
                             ]
+
                             containerBox model dispatch
                         ]
                     ]
